@@ -27,6 +27,45 @@ extern int          lapic_ipi_issue(int lapic_id);
 
 #define LAPIC_COUNT 256
 
+/* Process Local Storage Related Macros */
+
 #define PLS __attribute__((section(".pls")))
+
+#define __stringify_1(x...) #x
+#define __stringify(x...)  __stringify_1(x)
+
+#define __pls_seg gs
+#define __pls_prefix "%%" __stringify(__pls_seg) ":"
+#define __pls_arg(x) __pls_prefix "%P" #x
+
+#define pls_from_op(op, var, constraint)		\
+	({											\
+	typeof(var) __ret;							\
+	switch (sizeof (var)) {						\
+	case 1:										\
+		asm (op"b "__pls_arg(1)",%0"			\
+			 : "=q" (__ret)						\
+			 : constraint);						\
+		break;									\
+	case 2:										\
+		asm (op"w "__pls_arg(1)",%0"			\
+			 : "=q" (__ret)						\
+			 : constraint);						\
+		break;									\
+	case 4:										\
+		asm (op"l "__pls_arg(1)",%0"			\
+			 : "=q" (__ret)						\
+			 : constraint);						\
+		break;									\
+	case 8:										\
+		asm (op"q "__pls_arg(1)",%0"			\
+			 : "=q" (__ret)						\
+			 : constraint);						\
+		break;									\
+	}											\
+	__ret;										\
+	})
+
+#define pls_read(var)    pls_from_op("mov", var, "m" (var))
 
 #endif

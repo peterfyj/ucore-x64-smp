@@ -6,13 +6,15 @@
 /* global segment number */
 #define SEG_KTEXT        1
 #define SEG_KDATA        2
-#define SEG_UTEXT        3
-#define SEG_UDATA        4
-#define SEG_TSS(apic_id) 5 + (apic_id)
+#define SEG_KPLS         3
+#define SEG_UTEXT        4
+#define SEG_UDATA        5
+#define SEG_TSS(apic_id) 6 + (apic_id)
 
 /* global descrptor numbers */
 #define GD_KTEXT    ((SEG_KTEXT) << 4)      // kernel text
 #define GD_KDATA    ((SEG_KDATA) << 4)      // kernel data
+#define GD_KPLS     ((SEG_KPLS)  << 4)      // kernel pls
 #define GD_UTEXT    ((SEG_UTEXT) << 4)      // user text
 #define GD_UDATA    ((SEG_UDATA) << 4)      // user data
 #define GD_TSS(apic_id) ((SEG_TSS(apic_id)) << 4)        // task segment selector
@@ -22,6 +24,7 @@
 
 #define KERNEL_CS   ((GD_KTEXT) | DPL_KERNEL)
 #define KERNEL_DS   ((GD_KDATA) | DPL_KERNEL)
+#define KERNEL_PLS  ((GD_KPLS)  | DPL_KERNEL)
 #define USER_CS     ((GD_UTEXT) | DPL_USER)
 #define USER_DS     ((GD_UDATA) | DPL_USER)
 
