@@ -42,6 +42,14 @@ GOFILES_linux=\
 	sockcmsg_unix.go\
 	syscall_unix.go\
 
+GOFILES_ucoresmp=\
+	exec_unix.go\
+	lsf_ucoresmp.go\
+	netlink_ucoresmp.go\
+	sockcmsg_ucoresmp.go\
+	sockcmsg_unix.go\
+	syscall_unix.go\
+
 GOFILES_windows=\
 	exec_windows.go\
 	zerrors_windows.go\

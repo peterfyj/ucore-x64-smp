@@ -77,6 +77,33 @@ else
 GOFILES_darwin+=cgo_stub.go
 endif
 
+GOFILES_ucoresmp=\
+	dnsclient_unix.go\
+	dnsconfig.go\
+	fd.go\
+	fd_$(GOOS).go\
+	file.go\
+	interface_ucoresmp.go\
+	iprawsock_posix.go\
+	ipsock_posix.go\
+	lookup_unix.go\
+	newpollserver.go\
+	port.go\
+	sendfile_ucoresmp.go\
+	sock.go\
+	sock_ucoresmp.go\
+	tcpsock_posix.go\
+	udpsock_posix.go\
+	unixsock_posix.go\
+
+ifeq ($(CGO_ENABLED),1)
+CGOFILES_ucoresmp=\
+	cgo_ucoresmp.go\
+	cgo_unix.go
+else
+GOFILES_ucoresmp+=cgo_stub.go
+endif
+
 GOFILES_linux=\
 	dnsclient_unix.go\
 	dnsconfig.go\

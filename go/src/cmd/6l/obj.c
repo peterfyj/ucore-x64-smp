@@ -49,6 +49,7 @@ Header headers[] = {
    "elf", Helf,
    "darwin", Hdarwin,
    "linux", Hlinux,
+   "ucoresmp", Hucoresmp,
    "freebsd", Hfreebsd,
    "openbsd", Hopenbsd,
    "windows", Hwindows,
@@ -62,6 +63,7 @@ Header headers[] = {
  *	-Helf -T0x80110000 -R4096	is ELF32
  *	-Hdarwin -Tx -Rx		is apple MH-exec
  *	-Hlinux -Tx -Rx			is linux elf-exec
+ *	-Hucoresmp -Tx -Rx		is ucore elf-exec
  *	-Hfreebsd -Tx -Rx		is FreeBSD elf-exec
  *	-Hopenbsd -Tx -Rx		is OpenBSD elf-exec
  *	-Hwindows -Tx -Rx		is MS Windows PE32+
@@ -196,6 +198,7 @@ main(int argc, char *argv[])
 			INITDAT = 0;
 		break;
 	case Hlinux:	/* elf64 executable */
+	case Hucoresmp:	/* elf64 executable */
 	case Hfreebsd:	/* freebsd */
 	case Hopenbsd:	/* openbsd */
 		/*

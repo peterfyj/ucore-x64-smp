@@ -26,6 +26,7 @@ var dot = []string{
 	"types.go",
 	"stat_darwin.go",
 	"stat_linux.go",
+	"stat_ucoresmp.go"
 }
 
 type sysDir struct {

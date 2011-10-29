@@ -35,6 +35,7 @@ GOOS_LIST=\
 	linux\
 	plan9\
 	windows\
+	ucoresmp\
 
 GOARCH_LIST=\
 	386\

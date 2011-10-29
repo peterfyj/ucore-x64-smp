@@ -146,6 +146,9 @@ linux_arm)
 	mksysnum="./mksysnum_linux.pl /usr/include/asm/unistd.h"
 	mktypes="godefs -gsyscall"
 	;;
+ucoresmp_amd64)
+	# We do not generate automatically;
+	;;
 windows_386)
 	mksyscall="./mksyscall_windows.pl -l32"
 	mksysnum=

@@ -41,6 +41,7 @@
 
 #define PADDR(a)	((uint32)(a) & ~0x80000000)
 
+char ucoresmpdynld[] = "/lib64/ld-linux-x86-64.so.2";
 char linuxdynld[] = "/lib64/ld-linux-x86-64.so.2";
 char freebsddynld[] = "/libexec/ld-elf.so.1";
 char openbsddynld[] = "/usr/libexec/ld.so";
@@ -558,7 +559,7 @@ doelf(void)
 {
 	Sym *s, *shstrtab, *dynstr;
 
-	if(HEADTYPE != Hlinux && HEADTYPE != Hfreebsd && HEADTYPE != Hopenbsd)
+	if(HEADTYPE != Hlinux && HEADTYPE != Hucoresmp && HEADTYPE != Hfreebsd && HEADTYPE != Hopenbsd)
 		return;
 
 	/* predefine strings we need for section headers */
@@ -749,6 +750,7 @@ asmb(void)
 		debug['8'] = 1;	/* 64-bit addresses */
 		break;
 	case Hlinux:
+	case Hucoresmp:
 	case Hfreebsd:
 	case Hopenbsd:
 		debug['8'] = 1;	/* 64-bit addresses */
@@ -784,6 +786,7 @@ asmb(void)
 			symo = rnd(HEADR+segtext.len, INITRND)+rnd(segdata.filelen, INITRND)+machlink;
 			break;
 		case Hlinux:
+		case Hucoresmp:
 		case Hfreebsd:
 		case Hopenbsd:
 			symo = rnd(HEADR+segtext.len, INITRND)+segdata.filelen;
@@ -854,6 +857,7 @@ asmb(void)
 		asmbmacho();
 		break;
 	case Hlinux:
+	case Hucoresmp:
 	case Hfreebsd:
 	case Hopenbsd:
 		/* elf amd-64 */
@@ -892,6 +896,9 @@ asmb(void)
 			sh->addralign = 1;
 			if(interpreter == nil) {
 				switch(HEADTYPE) {
+				case Hucoresmp:
+					interpreter = ucoresmpdynld;
+					break;
 				case Hlinux:
 					interpreter = linuxdynld;
 					break;

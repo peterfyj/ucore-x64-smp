@@ -261,6 +261,7 @@ enum {
 	Hipaq,		// ipaq
 	Hdarwin,	// Apple Mach-O
 	Hlinux,		// Linux ELF
+	Hucoresmp,	// Ucore ELF
 	Hfreebsd,	// FreeBSD ELF
 	Hwindows,	// MS Windows PE
 	Hopenbsd,	// OpenBSD ELF

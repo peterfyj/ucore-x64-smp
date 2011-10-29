@@ -18,7 +18,7 @@ func skip(t *testing.T) bool {
 		return true
 	}
 
-	if runtime.GOOS == "linux" || runtime.GOOS == "freebsd" || runtime.GOOS == "darwin" {
+	if runtime.GOOS == "linux" || runtime.GOOS == "ucoresmp" || runtime.GOOS == "freebsd" || runtime.GOOS == "darwin" {
 		return false
 	}
 

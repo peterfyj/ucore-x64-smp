@@ -53,6 +53,11 @@ case "$GOARCH" in
 		echo '#define	g(r)	-8(r)'
 		echo '#define	m(r)	-4(r)'
 		;;
+	ucoresmp)
+		echo '#define	get_tls(r)	MOVL 8(GS), r'
+		echo '#define	g(r)	-8(r)'
+		echo '#define	m(r)	-4(r)'
+		;;
 	*)
 		echo '#define	get_tls(r)'
 		echo '#define	g(r)	0(GS)'

@@ -9,6 +9,9 @@ TARG=os/inotify
 GOFILES_linux=\
 	inotify_linux.go\
 
+GOFILES_ucoresmp=\
+	inotify_ucoresmp.go\
+
 GOFILES+=$(GOFILES_$(GOOS))
 
 include ../../../Make.pkg

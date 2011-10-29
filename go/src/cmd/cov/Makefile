@@ -28,6 +28,7 @@ endif
 
 install: install-$(NAME)
 install-linux: install-default
+install-ucoresmp: install-default
 install-freebsd: install-default
 install-windows: install-default
 

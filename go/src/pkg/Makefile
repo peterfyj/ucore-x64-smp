@@ -186,6 +186,12 @@ DIRS+=\
 
 endif
 
+ifeq ($(GOOS),ucoresmp)
+DIRS+=\
+	os/inotify\
+
+endif
+
 ifeq ($(GOOS),plan9)
 NOPLAN9BUILD=\
 	crypto/tls\

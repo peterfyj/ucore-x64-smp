@@ -15,6 +15,8 @@ CGOFILES_freebsd=\
 	lookup_unix.go
 CGOFILES_darwin=\
 	lookup_unix.go
+CGOFILES_ucoresmp=\
+	lookup_unix.go
 endif
 
 ifneq ($(CGOFILES_$(GOOS)),)
