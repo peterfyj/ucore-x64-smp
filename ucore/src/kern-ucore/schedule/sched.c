@@ -6,9 +6,44 @@
 #include <assert.h>
 #include <sched_MLFQ.h>
 #include <kio.h>
+#include <mp.h>
 
 #define current (pls_read(current))
 #define idleproc (pls_read(idleproc))
+
+/* For GDB ONLY - START */
+/* Collect scheduling information to check how are the CPUs... */
+static int sched_info_pid[PGSIZE / sizeof(int)];
+static int sched_info_times[PGSIZE / sizeof(int)];
+static int sched_info_head[8];
+int sched_collect_info = 0;
+
+void
+debug_print_sched (int lines)
+{
+	kprintf("\n");
+
+	int lcpu_count = pls_read(lcpu_count);
+	int i, j, k;
+	/* Print a header */
+	kprintf("        ");
+	for (i = 0; i < lcpu_count; i++)
+		kprintf("|    CPU%d    ", i);
+	kprintf("\n");
+	/* Print the table */
+	for (i = 0; i < lines; i++) {
+		kprintf(" %4d ", i);
+		for (k = 0; k < lcpu_count; k++) {
+			j = sched_info_head[k] - i;
+			if (j < 0)
+				j += PGSIZE / sizeof(int) / lcpu_count;
+			kprintf("  %4d(%4d) ", sched_info_pid[j*lcpu_count + k], sched_info_times[j*lcpu_count + k]);
+		}
+		kprintf("\n");
+	}
+}
+
+/* For GDB ONLY - END */
 
 static list_entry_t timer_list;
 
@@ -65,8 +100,6 @@ sched_init(void) {
     kprintf("sched class: %s\n", sched_class->name);
 }
 
-#include <mp.h>
-
 void
 wakeup_proc(struct proc_struct *proc) {
     assert(proc->state != PROC_ZOMBIE);
@@ -90,25 +123,30 @@ wakeup_proc(struct proc_struct *proc) {
 
 #include <vmm.h>
 
+//#define MT_SUPPORT
+
 void
 schedule(void) {
     bool intr_flag;
     struct proc_struct *next;
 	list_entry_t head;
-	int lapic_id = pls_read(lapic_id);
-	int lcpu_count = pls_read(lcpu_count);
 	
     local_intr_save(intr_flag);
+	int lapic_id = pls_read(lapic_id);
+	int lcpu_count = pls_read(lcpu_count);
     {
         current->need_resched = 0;
+#ifndef MT_SUPPORT
 		if (current->mm)
 		{
 			assert(current->mm->lapic == lapic_id);
 			current->mm->lapic = -1;
 		}
+#endif
         if (current->state == PROC_RUNNABLE && current->pid >= lcpu_count) {
             sched_class_enqueue(current);
         }
+#ifndef MT_SUPPORT
 		list_init(&head);
 		while (1)
 		{
@@ -131,13 +169,37 @@ schedule(void) {
 				break;
 			}
 		}
+#else
+		next = sched_class_pick_next();
+		if (next != NULL)
+			sched_class_dequeue(next);
+#endif  /* !MT_SUPPORT */
         if (next == NULL) {
             next = idleproc;
         }
         next->runs ++;
+		/* Collect information here*/
+		if (sched_collect_info) {
+			int lcpu_count = pls_read(lcpu_count);
+			int lcpu_idx = pls_read(lcpu_idx);
+			int loc = sched_info_head[lcpu_idx];
+			int prev = sched_info_pid[loc*lcpu_count + lcpu_idx];
+			if (next->pid == prev)
+				sched_info_times[loc*lcpu_count + lcpu_idx] ++;
+			else {
+				sched_info_head[lcpu_idx] ++;
+				if (sched_info_head[lcpu_idx] >= PGSIZE / sizeof(int) / lcpu_count)
+					sched_info_head[lcpu_idx] = 0;
+				loc = sched_info_head[lcpu_idx];
+				sched_info_pid[loc*lcpu_count + lcpu_idx] = next->pid;
+				sched_info_times[loc*lcpu_count + lcpu_idx] = 1;
+			}
+		}
+#ifndef MT_SUPPORT
 		assert(!next->mm || next->mm->lapic == -1);
 		if (next->mm)
 			next->mm->lapic = lapic_id;
+#endif
         if (next != current) {
             proc_run(next);
         }
