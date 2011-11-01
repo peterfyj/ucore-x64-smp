@@ -5,13 +5,13 @@
 #include <kio.h>
 #include <assert.h>
 
-PLS int lapic_id;
-PLS int lcpu_idx;
-PLS int lcpu_count;
+PLS int pls_lapic_id;
+PLS int pls_lcpu_idx;
+PLS int pls_lcpu_count;
 
 static spinlock_s kern_lock = {0};
 
-PLS static int volatile local_kern_locking;
+PLS static int volatile pls_local_kern_locking;
 
 volatile int ipi_raise[LAPIC_COUNT] = {0};
 
@@ -24,11 +24,11 @@ volatile int ipi_raise[LAPIC_COUNT] = {0};
 int
 mp_init(void)
 {
-	lapic_id = lapic_id_get();
-	lcpu_idx = lcpu_idx_get();
-	lcpu_count = lcpu_count_get();
+	pls_write (lapic_id, lapic_id_get());
+	pls_write (lcpu_idx, lcpu_idx_get());
+	pls_write (lcpu_count, lcpu_count_get());
 
-	local_kern_locking = 0;
+	pls_write (local_kern_locking, 0);
 	
 	return 0;
 }
@@ -37,15 +37,17 @@ void
 kern_enter(int source)
 {
 	int flags;
+	int lapic_id = pls_read (lapic_id);
+
 	local_intr_save_hw(flags);
-	if (local_kern_locking != 0)
+	if (pls_read(local_kern_locking) != 0)
 	{
 		mp_debug("CPU %d ERROR %d %d\n", lapic_id, source, (read_rflags() & FL_IF) != 0);
 		assert(0);
 	}
 	
-	local_kern_locking = 1;
-	mp_debug("CPU %d PID %d ENTERING KERN %d %d\n", lapic_id, current == NULL ? -1 : current->pid, source, (read_rflags() & FL_IF) != 0);
+	pls_write(local_kern_locking, 1);
+	mp_debug("CPU %d PID %d ENTERING KERN %d %d\n", lapic_id, pls_read(current) == NULL ? -1 : pls_read(current)->pid, source, (read_rflags() & FL_IF) != 0);
 	while (1)
 	{
 		if (ipi_raise[lapic_id])
@@ -57,7 +59,7 @@ kern_enter(int source)
 			break;
 	}
 	mp_debug("CPU %d ENTERED KERN\n", lapic_id);
-	local_kern_locking = 0;
+	pls_write(local_kern_locking, 0);
 	local_intr_restore_hw(flags);
 }
 
@@ -66,7 +68,7 @@ kern_leave(void)
 {
 	int flags;
 	local_intr_save_hw(flags);
-	mp_debug("CPU %d LEAVING KERN\n", lapic_id);
+	mp_debug("CPU %d LEAVING KERN\n", pls_read (lapic_id));
 	spinlock_release(&kern_lock);
 	local_intr_restore_hw(flags);
 }
@@ -98,7 +100,7 @@ mp_set_mm_pagetable(struct mm_struct *mm)
 
 	lcr3(PADDR_DIRECT(pgd));
 
-	assert(lapic_id_get() == lapic_id);
+	assert(lapic_id_get() == pls_read(lapic_id));
 	
 	local_intr_restore_hw(flags);
 }
@@ -113,12 +115,15 @@ volatile int mpti_end;
 void
 mp_tlb_invalidate(pgd_t *pgdir, uintptr_t la)
 {
+	int lcpu_idx = pls_read(lcpu_idx);
+	int lcpu_count = pls_read(lcpu_count);
+
 	if (init_finished < lcpu_count)
 	{
 		tlb_invalidate(pgdir, la);
 		return;
 	}
-	
+
 	int flag;
 
 	local_intr_save_hw(flag);

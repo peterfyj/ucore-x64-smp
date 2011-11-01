@@ -23,7 +23,7 @@ __kern_entry(void)
 {
 	mp_init();
 	
-	if (lcpu_idx == 0)
+	if (pls_read(lcpu_idx) == 0)
 	{
 		spinlock_acquire(&init_lock);
 		
@@ -62,6 +62,7 @@ __kern_entry(void)
 		spinlock_release(&init_lock);
 	}
 
+	int lcpu_count = pls_read(lcpu_count);
 	while (init_finished != lcpu_count) ;
 
 	intr_enable();

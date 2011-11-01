@@ -74,7 +74,9 @@ jump_kern(void)
 		else if (i < kern_bootinfo.kern_data)
 		{
 			/* alloc all pls data */
-			*pte = page2pa(alloc_page()) | PTE_W | PTE_P;
+			struct Page *pls = alloc_page();
+			lcpu_static[lapic_id()].pls_base = (uintptr_t)page2va(pls);
+			*pte = page2pa(pls) | PTE_W | PTE_P;
 		}
 		else
 		{
@@ -146,6 +148,12 @@ pgd_t *
 init_pgdir_get(void)
 {
 	return lcpu_static[lapic_id()].init_pgdir;
+}
+
+uintptr_t
+pls_base_get(void)
+{
+	return lcpu_static[lapic_id()].pls_base;
 }
 
 void
@@ -247,6 +255,7 @@ EXPORT_SYMBOL(irq_enable);
 EXPORT_SYMBOL(irq_disable);
 EXPORT_SYMBOL(irq_ack);
 EXPORT_SYMBOL(init_pgdir_get);
+EXPORT_SYMBOL(pls_base_get);
 EXPORT_SYMBOL(kpage_private_set);
 EXPORT_SYMBOL(kpage_private_get);
 EXPORT_SYMBOL(kalloc_pages);

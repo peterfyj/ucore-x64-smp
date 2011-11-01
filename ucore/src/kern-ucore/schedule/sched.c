@@ -7,6 +7,9 @@
 #include <sched_MLFQ.h>
 #include <kio.h>
 
+#define current (pls_read(current))
+#define idleproc (pls_read(idleproc))
+
 static list_entry_t timer_list;
 
 static struct sched_class *sched_class;
@@ -74,7 +77,7 @@ wakeup_proc(struct proc_struct *proc) {
             proc->state = PROC_RUNNABLE;
             proc->wait_state = 0;
             if (proc != current) {
-				assert(proc->pid >= lcpu_count);
+				assert(proc->pid >= pls_read(lcpu_count));
                 sched_class_enqueue(proc);
             }
         }
@@ -92,6 +95,8 @@ schedule(void) {
     bool intr_flag;
     struct proc_struct *next;
 	list_entry_t head;
+	int lapic_id = pls_read(lapic_id);
+	int lcpu_count = pls_read(lcpu_count);
 	
     local_intr_save(intr_flag);
     {

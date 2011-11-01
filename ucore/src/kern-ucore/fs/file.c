@@ -16,7 +16,7 @@
 
 static struct file *
 get_filemap(void) {
-    struct fs_struct *fs_struct = current->fs_struct;
+    struct fs_struct *fs_struct = pls_read(current)->fs_struct;
     assert(fs_struct != NULL && fs_count(fs_struct) > 0);
     return fs_struct->filemap;
 }

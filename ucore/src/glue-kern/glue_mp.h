@@ -18,11 +18,13 @@ typedef struct lcpu_info_s
 #define lapic_id_get     (*lapic_id_get_ptr)
 #define lcpu_idx_get     (*lcpu_idx_get_ptr)
 #define lcpu_count_get   (*lcpu_count_get_ptr)
+#define pls_base_get     (*pls_base_get_ptr)
 #define lapic_ipi_issue  (*lapic_ipi_issue_ptr)
 
 extern unsigned int lapic_id_get(void);
 extern unsigned int lcpu_idx_get(void);
 extern unsigned int lcpu_count_get(void);
+extern uintptr_t    pls_base_get(void);
 extern int          lapic_ipi_issue(int lapic_id);
 
 #define LAPIC_COUNT 256
@@ -30,6 +32,8 @@ extern int          lapic_ipi_issue(int lapic_id);
 /* Process Local Storage Related Macros */
 
 #define PLS __attribute__((section(".pls")))
+
+#ifdef SEGMENT_SUPPORT
 
 #define __stringify_1(x...) #x
 #define __stringify(x...)  __stringify_1(x)
@@ -67,5 +71,36 @@ extern int          lapic_ipi_issue(int lapic_id);
 	})
 
 #define pls_read(var)    pls_from_op("mov", var, "m" (var))
+
+#else
+
+extern uintptr_t __kern_pls_start;
+
+#define pls_read(var)													\
+	({																	\
+		uintptr_t __pls_base = pls_base_get();							\
+		uintptr_t __seg_base = (uintptr_t)&__kern_pls_start;			\
+		typeof(pls_##var) __ret =										\
+			*(typeof(pls_##var) *)((uintptr_t)&(pls_##var) - __seg_base + __pls_base); \
+		__ret;															\
+	})
+
+#define pls_get_ptr(var)												\
+	({																	\
+		uintptr_t __pls_base = pls_base_get();							\
+		uintptr_t __seg_base = (uintptr_t)&__kern_pls_start;			\
+		(void *)((uintptr_t)&(pls_##var) - __seg_base + __pls_base);	\
+	})
+
+#define pls_write(var, value)											\
+	do {																\
+		uintptr_t __pls_base = pls_base_get();							\
+		uintptr_t __seg_base = (uintptr_t)&__kern_pls_start;			\
+		*(typeof(pls_##var) *)((uintptr_t)&(pls_##var) - __seg_base + __pls_base) = value; \
+	} while (0)
+
+
+
+#endif  /* !SEGMENT_SUPPORT */
 
 #endif
