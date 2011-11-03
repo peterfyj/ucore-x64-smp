@@ -13,13 +13,16 @@
 
 /* For GDB ONLY - START */
 /* Collect scheduling information to check how are the CPUs... */
-static int sched_info_pid[PGSIZE / sizeof(int)];
-static int sched_info_times[PGSIZE / sizeof(int)];
+#define SLICEPOOL_SIZE 21
+
+static uint16_t sched_info_pid[PGSIZE / sizeof(uint16_t)];
+static uint16_t sched_info_times[PGSIZE / sizeof(uint16_t)];
 static int sched_info_head[8];
-int sched_collect_info = 0;
+static int sched_slices[8][SLICEPOOL_SIZE];
+int sched_collect_info = 1;
 
 void
-debug_print_sched (int lines)
+db_sched (int lines)
 {
 	kprintf("\n");
 
@@ -36,12 +39,36 @@ debug_print_sched (int lines)
 		for (k = 0; k < lcpu_count; k++) {
 			j = sched_info_head[k] - i;
 			if (j < 0)
-				j += PGSIZE / sizeof(int) / lcpu_count;
+				j += PGSIZE / sizeof(uint16_t) / lcpu_count;
 			kprintf("  %4d(%4d) ", sched_info_pid[j*lcpu_count + k], sched_info_times[j*lcpu_count + k]);
 		}
 		kprintf("\n");
 	}
 }
+
+void
+db_time (uint16_t left, uint16_t right)
+{
+	kprintf("\n");
+
+	int lcpu_count = pls_read(lcpu_count);
+	int i, j;
+	for (i = 0; i < lcpu_count; i++) {
+		kprintf("On CPU%d: ", i);
+		int sum = 0, total = PGSIZE / sizeof(uint16_t) / lcpu_count;
+		for (j = 0; j < total; j++) {
+			uint16_t pid = sched_info_pid[j*lcpu_count + i];
+			if (pid >= left && pid <= right)
+				sum += sched_info_times[j*lcpu_count + i];
+		}
+		kprintf("%4d", sum);
+		sum = 0;
+		for (j = left; j <= right; j++)
+			sum += sched_slices[i][j % SLICEPOOL_SIZE];
+		kprintf("(%4d)\n", sum);
+	}
+}
+
 
 /* For GDB ONLY - END */
 
@@ -123,7 +150,7 @@ wakeup_proc(struct proc_struct *proc) {
 
 #include <vmm.h>
 
-//#define MT_SUPPORT
+#define MT_SUPPORT
 
 void
 schedule(void) {
@@ -188,9 +215,13 @@ schedule(void) {
 				sched_info_times[loc*lcpu_count + lcpu_idx] ++;
 			else {
 				sched_info_head[lcpu_idx] ++;
-				if (sched_info_head[lcpu_idx] >= PGSIZE / sizeof(int) / lcpu_count)
+				if (sched_info_head[lcpu_idx] >= PGSIZE / sizeof(uint16_t) / lcpu_count)
 					sched_info_head[lcpu_idx] = 0;
 				loc = sched_info_head[lcpu_idx];
+				uint16_t prev_pid = sched_info_pid[loc*lcpu_count + lcpu_idx];
+				uint16_t prev_times = sched_info_times[loc*lcpu_count + lcpu_idx];
+				if (prev_times > 0 && prev_pid >= lcpu_count + 2)
+					sched_slices[lcpu_idx][prev_pid % SLICEPOOL_SIZE] += prev_times;
 				sched_info_pid[loc*lcpu_count + lcpu_idx] = next->pid;
 				sched_info_times[loc*lcpu_count + lcpu_idx] = 1;
 			}

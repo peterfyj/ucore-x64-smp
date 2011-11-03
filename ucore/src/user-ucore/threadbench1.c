@@ -8,6 +8,9 @@
 
 int
 test(void *arg) {
+	int pid = getpid();
+	printf ("Child thread pid = %d\n", pid);
+
 	int i, j;
 	for (i = 0; i < NR_LOOPS; i++)
 		for (j = 0; j < NR_LOOPS; j++)
@@ -20,6 +23,9 @@ test(void *arg) {
 
 int
 main(void) {
+	int pid = getpid();
+	printf ("The main thread pid = %d\n", pid);
+
     thread_t tid[NR_THREADS];
     int i;
 	
