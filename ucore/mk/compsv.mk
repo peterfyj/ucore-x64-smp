@@ -1,4 +1,4 @@
-CC		:= gcc -m64 -ffreestanding \
+CC		:= ${TARGET_CC_PREFIX}gcc -m64 -ffreestanding \
 			-mcmodel=large -mno-red-zone \
 			-mno-mmx -mno-sse -mno-sse2 \
 			-mno-sse3 -mno-3dnow \

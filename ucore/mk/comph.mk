@@ -1,4 +1,4 @@
-CC := gcc
+CC := ${HOST_CC_PREFIX}gcc
 LD := ld
 
 T_CC_BASE_FLAGS  := 

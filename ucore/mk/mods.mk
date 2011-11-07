@@ -29,11 +29,9 @@ MODDIRS := $(addprefix mod-,${MODS})
 
 all: ${MODDIRS}
 
-mod-supervisor: mod-libs-sv
+mod-supervisor: mod-libs-sv mod-kern-ucore
 
 mod-kern-river: mod-supervisor
-
-mod-kern-ucore: mod-supervisor
 
 mod-user-ucore: mod-ht-mksfs mod-libs-user-ucore
 
