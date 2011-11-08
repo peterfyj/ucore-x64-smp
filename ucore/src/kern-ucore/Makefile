@@ -7,8 +7,5 @@ T_CC_FLAGS := 	-I../glue-kern -Iglue-ucore -Iglue-ucore/libs -Ilibs -Idebug -Idr
 include ${T_BASE}/mk/compk.mk
 include ${T_BASE}/mk/template.mk
 
-all: ${T_OBJ}/${KERN_FILELIST}
+all: ${OBJFILES}
 
-${T_OBJ}/${KERN_FILELIST}: ${OBJFILES}
-	@echo LD $@
-	${V}echo ${OBJFILES} >  ${T_OBJ}/${KERN_FILELIST}

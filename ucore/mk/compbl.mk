@@ -1,7 +1,4 @@
-CC      := ${TARGET_CC_PREFIX}gcc -m32 -fno-builtin -fno-builtin-function -nostdinc
-LD		:= ld -m $(shell ld -V | grep elf_i386 2>/dev/null)
-OBJDUMP	:= objdump
-OBJCOPY := objcopy
-STRIP   := strip
+CC      := ${TARGET_CC_PREFIX}gcc ${TARGET_CC_FLAGS_COMMON} ${TARGET_CC_FLAGS_BL}
+LD		:= ${TARGET_CC_PREFIX}ld ${TARGET_LD_FLAGS}
 
 include ${T_BASE}/mk/compopt.mk

@@ -6,13 +6,26 @@ export V        		?= @
 export T_BASE   		?= ${PWD}
 export T_OBJ    		?= ${PWD}/obj
 export MAKE     		:= make -s
-export HOST_CC_PREFIX	?=	
-export TARGET_CC_PREFIX	?=
 QEMU            		?= qemu-system-x86_64
-export OBJCOPY 			?= objcopy
-export BRANCH   		?= ucore
 
-export KERN_FILELIST	?= kern-objfiles
+export HOST_CC_PREFIX	?=
+export TARGET_CC_PREFIX	?=
+export TARGET_CC_FLAGS_COMMON	?=	-ffreestanding \
+									-mno-red-zone \
+									-mno-mmx -mno-sse -mno-sse2 \
+									-mno-sse3 -mno-3dnow \
+									-fno-builtin -fno-builtin-function -nostdinc
+export TARGET_CC_FLAGS_BL		?=	-m32
+export TARGET_CC_FLAGS_KERNEL	?=	-m64 -mcmodel=kernel
+export TARGET_CC_FLAGS_SV		?=	-m64 -mcmodel=large
+export TARGET_CC_FLAGS_USER		?=	-m64 -mcmodel=small
+export TARGET_LD_FLAGS			?=	-m $(shell ld -V | grep elf_i386 2>/dev/null) -nostdlib
+
+export OBJDUMP			?= objdump
+export OBJCOPY 			?= objcopy
+export STRIP   			?= strip
+
+export BRANCH   		?= ucore
 
 HAS_DRIVER_OS   		?= n
 ifneq (${HAS_DRIVER_OS},n)

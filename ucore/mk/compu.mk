@@ -1,10 +1,4 @@
-CC		:= ${TARGET_CC_PREFIX}gcc -m64 -ffreestanding \
-			-mcmodel=small -mno-red-zone \
-			-mno-mmx -mno-sse -mno-sse2 \
-			-mno-sse3 -mno-3dnow \
-			-fno-builtin -fno-builtin-function -nostdinc
-
-LD		:=  ld -m $(shell ld -V | grep elf_x86_64 2>/dev/null) -nostdlib
-OBJCOPY :=  objcopy
+CC      := ${TARGET_CC_PREFIX}gcc ${TARGET_CC_FLAGS_COMMON} ${TARGET_CC_FLAGS_USER}
+LD		:= ${TARGET_CC_PREFIX}ld ${TARGET_LD_FLAGS}
 
 include ${T_BASE}/mk/compopt.mk
