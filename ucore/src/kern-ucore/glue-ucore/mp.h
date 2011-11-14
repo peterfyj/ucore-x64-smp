@@ -5,9 +5,9 @@
 #include <glue_memlayout.h>
 #include <types.h>
 
-extern int lapic_id;
-extern int lcpu_idx;
-extern int lcpu_count;
+extern int pls_lapic_id;
+extern int pls_lcpu_idx;
+extern int pls_lcpu_count;
 
 extern volatile int ipi_raise[LAPIC_COUNT];
 

@@ -10,22 +10,24 @@
 #include <glue_intr.h>
 #include <mp.h>
 
-PLS static size_t used_pages;
-PLS list_entry_t page_struct_free_list;
+PLS static size_t pls_used_pages;
+PLS list_entry_t pls_page_struct_free_list;
 
 static struct Page *
 page_struct_alloc(uintptr_t pa)
 {
-	if (list_empty(&page_struct_free_list))
+	list_entry_t *page_struct_free_list = pls_get_ptr(page_struct_free_list);
+
+	if (list_empty(page_struct_free_list))
 	{
 		struct Page *p = KADDR_DIRECT(kalloc_pages(1));
 		
 		int i;
 		for (i = 0; i < PGSIZE / sizeof(struct Page); ++ i)
-			list_add(&page_struct_free_list, &p[i].page_link);
+			list_add(page_struct_free_list, &p[i].page_link);
 	}
 
-	list_entry_t *entry = list_next(&page_struct_free_list);
+	list_entry_t *entry = list_next(page_struct_free_list);
 	list_del(entry);
 
 	struct Page *page = le2page(entry, page_link);
@@ -41,7 +43,8 @@ page_struct_alloc(uintptr_t pa)
 static void
 page_struct_free(struct Page *page)
 {
-	list_add(&page_struct_free_list, &page->page_link);
+	list_entry_t *page_struct_free_list = pls_get_ptr(page_struct_free_list);
+	list_add(page_struct_free_list, &page->page_link);
 }
 
 struct Page *
@@ -63,7 +66,8 @@ alloc_pages(size_t npages)
 		kpage_private_set(base + i * PGSIZE, page);
 	}
 
-	used_pages += npages;
+	//used_pages += npages;
+	pls_write(used_pages, pls_read(used_pages) + npages);
 
 	local_intr_restore_hw(flags);
 	return result;
@@ -84,7 +88,8 @@ free_pages(struct Page *base, size_t npages)
 	}
 	
 	kfree_pages(basepa, npages);
-	used_pages -= npages;
+//	used_pages -= npages;
+	pls_write(used_pages, pls_read(used_pages) - npages);
 
 	local_intr_restore_hw(flags);
 }
@@ -92,14 +97,15 @@ free_pages(struct Page *base, size_t npages)
 size_t
 nr_used_pages(void)
 {
-	return used_pages;
+	return pls_read (used_pages);
 }
 
 void
 pmm_init_ap(void)
 {
-	list_init(&page_struct_free_list);
-	used_pages = 0;
+	list_entry_t *page_struct_free_list = pls_get_ptr(page_struct_free_list);
+	list_init(page_struct_free_list);
+	pls_write (used_pages, 0);
 }
 
 pgd_t *

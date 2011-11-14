@@ -69,10 +69,13 @@ SYS_getpid      : get the process's pid
 
 */
 
-PLS struct proc_struct *current;
-PLS struct proc_struct *idleproc;
+PLS struct proc_struct *pls_current;
+PLS struct proc_struct *pls_idleproc;
 struct proc_struct *initproc;
 struct proc_struct *kswapd;
+
+#define current (pls_read(current))
+#define idleproc (pls_read(idleproc))
 
 // the process set's list
 list_entry_t proc_list;
@@ -175,7 +178,7 @@ get_pid(void) {
     list_entry_t *list = &proc_list, *le;
     static int next_safe = MAX_PID, last_pid = MAX_PID;
     if (++ last_pid >= MAX_PID) {
-        last_pid = lcpu_count;
+        last_pid = pls_read(lcpu_count);
         goto inside;
     }
     if (last_pid >= next_safe) {
@@ -212,7 +215,7 @@ proc_run(struct proc_struct *proc) {
 		// kprintf("(%d) => %d\n", lapic_id, next->pid);
         local_intr_save(intr_flag);
         {
-            current = proc;
+            pls_write(current, proc);
             load_rsp0(next->kstack + KSTACKSIZE);
             mp_set_mm_pagetable(next->mm);
             switch_to(&(prev->context), &(next->context));
@@ -809,7 +812,7 @@ load_icode(int fd, int argc, char **kargv) {
     mm_count_inc(mm);
     current->mm = mm;
     current->cr3 = PADDR(mm->pgdir);
-	mm->lapic = lapic_id;
+	mm->lapic = pls_read(lapic_id);
     mp_set_mm_pagetable(mm);
 
     uintptr_t stacktop = USTACKTOP - argc * PGSIZE;
@@ -1349,6 +1352,9 @@ init_main(void *arg) {
 void
 proc_init(void) {
     int i;
+	int lcpu_idx = pls_read(lcpu_idx);
+	int lapic_id = pls_read(lapic_id);
+	int lcpu_count = pls_read(lcpu_count);
 
     list_init(&proc_list);
     list_init(&proc_mm_list);
@@ -1356,7 +1362,8 @@ proc_init(void) {
         list_init(hash_list + i);
     }
 
-    if ((idleproc = alloc_proc()) == NULL) {
+	pls_write(idleproc, alloc_proc());
+    if (idleproc == NULL) {
         panic("cannot alloc idleproc.\n");
     }
 
@@ -1377,7 +1384,7 @@ proc_init(void) {
     set_proc_name(idleproc, namebuf);
     nr_process ++;
 
-    current = idleproc;
+    pls_write(current, idleproc);
 
     int pid = kernel_thread(init_main, NULL, 0);
     if (pid <= 0) {
@@ -1394,7 +1401,11 @@ proc_init(void) {
 void
 proc_init_ap(void)
 {
-	if ((idleproc = alloc_proc()) == NULL) {
+	int lcpu_idx = pls_read(lcpu_idx);
+	int lapic_id = pls_read(lapic_id);
+
+	pls_write(idleproc, alloc_proc());
+	if (idleproc == NULL) {
         panic("cannot alloc idleproc.\n");
     }
 
@@ -1415,7 +1426,7 @@ proc_init_ap(void)
     set_proc_name(idleproc, namebuf);
     nr_process ++;
 
-	current = idleproc;
+	pls_write(current, idleproc);
 
 	assert(idleproc != NULL && idleproc->pid == lcpu_idx);
 }

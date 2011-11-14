@@ -50,6 +50,7 @@ void
 lock_mm(struct mm_struct *mm) {
     if (mm != NULL) {
         down(&(mm->mm_sem));
+		struct proc_struct *current = pls_read(current);
         if (current != NULL) {
             mm->locked_by = current->pid;
         }
@@ -70,6 +71,7 @@ try_lock_mm(struct mm_struct *mm) {
         if (!try_down(&(mm->mm_sem))) {
             return 0;
         }
+		struct proc_struct *current = pls_read(current);
         if (current != NULL) {
             mm->locked_by = current->pid;
         }
@@ -700,6 +702,8 @@ check_pgfault(void) {
 
 int
 do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
+	struct proc_struct *current = pls_read(current);
+	
     if (mm == NULL) {
         assert(current != NULL);
         panic("page fault in kernel thread: pid = %d, %d %08x.\n",
