@@ -304,7 +304,8 @@ setup_pgdir(struct mm_struct *mm) {
     }
     pgd_t *pgdir = page2kva(page);
     memcpy(pgdir, init_pgdir_get(), PGSIZE);
-    pgdir[PGX(VPT)] = PADDR(pgdir) | PTE_P | PTE_W;
+	ptep_map(&(pgdir[PGX(VPT)]), PADDR(pgdir));
+	ptep_set_s_write(&(pgdir[PGX(VPT)]));
     mm->pgdir = pgdir;
     return 0;
 }
@@ -716,7 +717,8 @@ load_icode(int fd, int argc, char **kargv) {
     }
 
     struct proghdr __ph, *ph = &__ph;
-    uint32_t vm_flags, perm, phnum;
+    uint32_t vm_flags, phnum;
+	pte_perm_t perm = 0;
     for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
         off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
         if ((ret = load_icode_read(fd, ph, sizeof(struct proghdr), phoff)) != 0) {
@@ -732,11 +734,12 @@ load_icode(int fd, int argc, char **kargv) {
         if (ph->p_filesz == 0) {
             continue ;
         }
-        vm_flags = 0, perm = PTE_U;
+        vm_flags = 0;
+		ptep_set_u_read(&perm);
         if (ph->p_flags & ELF_PF_X) vm_flags |= VM_EXEC;
         if (ph->p_flags & ELF_PF_W) vm_flags |= VM_WRITE;
         if (ph->p_flags & ELF_PF_R) vm_flags |= VM_READ;
-        if (vm_flags & VM_WRITE) perm |= PTE_W;
+        if (vm_flags & VM_WRITE) ptep_set_u_write(&perm);
 
         if ((ret = mm_map(mm, ph->p_va, ph->p_memsz, vm_flags, NULL)) != 0) {
             goto bad_cleanup_mmap;

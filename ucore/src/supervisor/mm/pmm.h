@@ -46,7 +46,7 @@ int page_insert(pgd_t *pgdir, struct Page *page, uintptr_t la, uint32_t perm);
 void load_rsp0(uintptr_t rsp0);
 void tlb_invalidate(pgd_t *pgdir, uintptr_t la);
 
-void print_pgdir(void);
+void print_pgdir(int (*printf)(const char *fmt, ...));
 
 
 /* Simply translate between VA and PA without checking */

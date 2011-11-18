@@ -12,6 +12,7 @@
 #include <sysconf.h>
 #include <memmap.h>
 #include <spinlock.h>
+#include <kern.h>
 
 /* *
  * Task State Segment:
@@ -353,7 +354,7 @@ pmm_init(void) {
 
     // check_boot_pgdir();
 
-    print_pgdir();
+    print_pgdir(cprintf);
 }
 
 pgd_t *
@@ -573,26 +574,28 @@ get_pgtable_items(size_t left, size_t right, size_t start, uintptr_t *table, siz
 }
 
 static void
-print_pgdir_sub(int deep, size_t left, size_t right, char *s1[], size_t s2[], uintptr_t *s3[]) {
+print_pgdir_sub(int deep, size_t left, size_t right, 
+				char *s1[], size_t s2[], uintptr_t *s3[], 
+				int (*printf)(const char *fmt, ...)) {
     if (deep > 0) {
         uint32_t perm;
         size_t l, r = left;
         while ((perm = get_pgtable_items(left, right, r, s3[0], &l, &r)) != 0) {
-            cprintf(s1[0], r - l);
+            printf(s1[0], r - l);
             size_t lb = l * s2[0], rb = r * s2[0];
             if ((lb >> 32) & 0x8000) {
                 lb |= (0xFFFFLLU << 48);
                 rb |= (0xFFFFLLU << 48);
             }
-            cprintf(" %016llx-%016llx %016llx %s\n", lb, rb, rb - lb, perm2str(perm));
-            print_pgdir_sub(deep - 1, l * NPGENTRY, r * NPGENTRY, s1 + 1, s2 + 1, s3 + 1);
+            printf(" %016llx-%016llx %016llx %s\n", lb, rb, rb - lb, perm2str(perm));
+            print_pgdir_sub(deep - 1, l * NPGENTRY, r * NPGENTRY, s1 + 1, s2 + 1, s3 + 1, printf);
         }
     }
 }
 
 //print_pgdir - print the PDT&PT
 void
-print_pgdir(void) {
+print_pgdir(int (*printf)(const char *fmt, ...)) {
     char *s1[] = {
         "PGD          (%09x)",
         " |-PUD       (%09x)",
@@ -601,8 +604,9 @@ print_pgdir(void) {
     };
     size_t s2[] = {PUSIZE, PMSIZE, PTSIZE, PGSIZE};
     uintptr_t *s3[] = {vgd, vud, vmd, vpt};
-    cprintf("-------------------- BEGIN --------------------\n");
-    print_pgdir_sub(sizeof(s1) / sizeof(s1[0]), 0, NPGENTRY, s1, s2, s3);
-    cprintf("--------------------- END ---------------------\n");
+    printf("-------------------- BEGIN --------------------\n");
+    print_pgdir_sub(sizeof(s1) / sizeof(s1[0]), 0, NPGENTRY, s1, s2, s3, printf);
+    printf("--------------------- END ---------------------\n");
 }
 
+EXPORT_SYMBOL(print_pgdir);

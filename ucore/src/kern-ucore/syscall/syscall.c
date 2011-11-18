@@ -127,7 +127,7 @@ sys_putc(uint64_t arg[]) {
 
 static uint64_t
 sys_pgdir(uint64_t arg[]) {
-    print_pgdir();
+    print_pgdir(kprintf);
     return 0;
 }
 

@@ -15,6 +15,7 @@
 #define kpage_private_get (*kpage_private_get_ptr)
 #define load_rsp0         (*load_rsp0_ptr)
 #define init_pgdir_get    (*init_pgdir_get_ptr)
+#define print_pgdir       (*print_pgdir_ptr)
 
 extern uintptr_t kalloc_pages(size_t npages);
 extern void      kfree_pages(uintptr_t basepa, size_t npages);
@@ -22,6 +23,7 @@ extern void      kpage_private_set(uintptr_t pa, void *private);
 extern void     *kpage_private_get(uintptr_t pa);
 extern void      load_rsp0(uintptr_t rsp0);
 extern pgd_t    *init_pgdir_get(void);
+extern void      print_pgdir(int (*printf)(const char *fmt, ...));
 
 /* Simply translate between VA and PA without checking */
 #define KADDR_DIRECT(addr) ((void*)((uintptr_t)(addr) + PBASE))

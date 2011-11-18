@@ -747,9 +747,10 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         }
     }
 
-    uint32_t perm = PTE_U;
+    pte_perm_t perm = 0;
+	ptep_set_u_read(&perm);
     if (vma->vm_flags & VM_WRITE) {
-        perm |= PTE_W;
+		ptep_set_u_write(&perm);
     }
     addr = ROUNDDOWN(addr, PGSIZE);
 
@@ -759,7 +760,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
     if ((ptep = get_pte(mm->pgdir, addr, 1)) == NULL) {
         goto failed;
     }
-    if (*ptep == 0) {
+    if (ptep_invalid(ptep)) {
         if (!(vma->vm_flags & VM_SHARE)) {
             if (pgdir_alloc_page(mm->pgdir, addr, perm) == NULL) {
                 goto failed;
@@ -769,17 +770,17 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
             lock_shmem(vma->shmem);
             uintptr_t shmem_addr = addr - vma->vm_start + vma->shmem_off;
             pte_t *sh_ptep = shmem_get_entry(vma->shmem, shmem_addr, 1);
-            if (sh_ptep == NULL || *sh_ptep == 0) {
+            if (sh_ptep == NULL || ptep_invalid(sh_ptep)) {
                 unlock_shmem(vma->shmem);
                 goto failed;
             }
             unlock_shmem(vma->shmem);
-            if (*sh_ptep & PTE_P) {
+            if (ptep_present(sh_ptep)) {
                 page_insert(mm->pgdir, pa2page(*sh_ptep), addr, perm);
             }
             else {
                 swap_duplicate(*ptep);
-                *ptep = *sh_ptep;
+				ptep_copy(ptep, sh_ptep);
             }
         }
     }
@@ -787,7 +788,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         struct Page *page, *newpage = NULL;
         bool cow = ((vma->vm_flags & (VM_SHARE | VM_WRITE)) == VM_WRITE), may_copy = 1;
 
-        if (!(!(*ptep & PTE_P) || ((error_code & 2) && !(*ptep & PTE_W) && cow)))
+        if (!(!ptep_present(ptep) || ((error_code & 2) && !ptep_u_write(ptep) && cow)))
 		{
 			assert(PADDR(mm->pgdir) == rcr3());
 			kprintf("%p %p %d %d\n", *ptep, addr, error_code, cow);
@@ -797,7 +798,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         if (cow) {
             newpage = alloc_page();
         }
-        if (*ptep & PTE_P) {
+        if (ptep_present(ptep)) {
             page = pte2page(*ptep);
         }
         else {
@@ -808,7 +809,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
                 goto failed;
             }
             if (!(error_code & 2) && cow) {
-                perm &= ~PTE_W;
+                ptep_unset_u_write(&perm);
                 may_copy = 0;
             }
         }

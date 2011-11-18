@@ -3,6 +3,7 @@
 
 #include <glue_pmm.h>
 #include <glue_mmu.h>
+#include <glue_pgmap.h>
 #include <memlayout.h>
 #include <types.h>
 #include <assert.h>
@@ -41,7 +42,7 @@ kva2page(void *kva) {
 
 static inline struct Page *
 pte2page(pte_t pte) {
-    if (!(pte & PTE_P)) {
+    if (! ptep_present(&pte)) {
         panic("pte2page called with invalid pte");
     }
     return pa2page(PTE_ADDR(pte));
@@ -96,7 +97,7 @@ size_t       nr_used_pages(void);
 
 struct Page *get_page(pgd_t *pgdir, uintptr_t la, pte_t **ptep_store);
 void page_remove(pgd_t *pgdir, uintptr_t la);
-int page_insert(pgd_t *pgdir, struct Page *page, uintptr_t la, uint32_t perm);
+int page_insert(pgd_t *pgdir, struct Page *page, uintptr_t la, pte_perm_t perm);
 
 void tlb_invalidate(pgd_t *pgdir, uintptr_t la);
 struct Page *pgdir_alloc_page(pgd_t *pgdir, uintptr_t la, uint32_t perm);
@@ -104,7 +105,7 @@ void unmap_range(pgd_t *pgdir, uintptr_t start, uintptr_t end);
 void exit_range(pgd_t *pgdir, uintptr_t start, uintptr_t end);
 int copy_range(pgd_t *to, pgd_t *from, uintptr_t start, uintptr_t end, bool share);
 
-void print_pgdir(void);
+//void print_pgdir(void);
 
 void pmm_init_ap(void);
 
