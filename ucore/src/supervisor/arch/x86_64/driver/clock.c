@@ -1,4 +1,4 @@
-#include <x86.h>
+#include <arch.h>
 #include <trap.h>
 #include <stdio.h>
 #include <picirq.h>

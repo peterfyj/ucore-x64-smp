@@ -1,5 +1,5 @@
 #include <types.h>
-#include <x86.h>
+#include <arch.h>
 #include <picirq.h>
 
 // I/O Addresses of the two programmable interrupt controllers

@@ -3,7 +3,7 @@
 #include <trap.h>
 #include <picirq.h>
 #include <ide.h>
-#include <x86.h>
+#include <arch.h>
 #include <assert.h>
 
 #define ISA_DATA                0x00

@@ -5,6 +5,7 @@
 #include <mmu.h>
 #include <memlayout.h>
 #include <atomic.h>
+#include <spinlock.h>
 #include <assert.h>
 
 // pmm_manager is a physical memory management class. A special pmm manager - XXX_pmm_manager
@@ -23,6 +24,7 @@ struct pmm_manager {
 };
 
 extern const struct pmm_manager *pmm_manager;
+extern spinlock_s pmm_lock;
 extern pgd_t *boot_pgdir;
 extern uintptr_t boot_cr3;
 

@@ -1,4 +1,4 @@
-#include <x86.h>
+#include <arch.h>
 #include <intr.h>
 
 /* intr_enable - enable irq interrupt */

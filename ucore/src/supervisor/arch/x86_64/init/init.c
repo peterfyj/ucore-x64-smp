@@ -12,7 +12,7 @@
 #include <lapic.h>
 #include <acpi_conf.h>
 #include <sysconf.h>
-#include <x86.h>
+#include <arch.h>
 #include <lcpu.h>
 #include <cpuid.h>
 #include <context.h>

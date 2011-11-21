@@ -10,7 +10,7 @@
 #include <string.h>
 #include <boot_ap.S.h>
 #include <stdio.h>
-#include <x86.h>
+#include <arch.h>
 #include <mmu.h>
 
 irq_control_s  irq_control[IRQ_COUNT];

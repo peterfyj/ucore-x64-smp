@@ -1,7 +1,7 @@
 #include <acpi_conf.h>
 #include <pmm.h>
 #include <error.h>
-#include <x86.h>
+#include <arch.h>
 #include <sysconf.h>
 #include <lapic.h>
 #include <ioapic.h>

@@ -2,7 +2,7 @@
 #include <sysconf.h>
 #include <pmm.h>
 #include <trap.h>
-#include <x86.h>
+#include <arch.h>
 #include <stdio.h>
 
 /* I/O APIC Code from xv6 */

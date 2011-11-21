@@ -5,7 +5,7 @@
 #include <lapic.h>
 #include <ioapic.h>
 #include <lcpu.h>
-#include <x86.h>
+#include <arch.h>
 #include <spinlock.h>
 #include <stdio.h>
 #include <sysconf.h>

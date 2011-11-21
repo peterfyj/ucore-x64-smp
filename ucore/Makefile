@@ -8,6 +8,7 @@ export T_OBJ    		?= ${PWD}/obj
 export MAKE     		:= make -s
 QEMU            		?= qemu-system-x86_64
 
+export ARCH				?=	x86_64
 export HOST_CC_PREFIX	?=
 export TARGET_CC_PREFIX	?=
 export TARGET_CC_FLAGS_COMMON	?=	-ffreestanding \

@@ -3,7 +3,7 @@
 #include <memlayout.h>
 #include <clock.h>
 #include <trap.h>
-#include <x86.h>
+#include <arch.h>
 #include <stdio.h>
 #include <assert.h>
 #include <console.h>

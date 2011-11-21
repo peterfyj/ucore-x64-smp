@@ -3,7 +3,7 @@
 #include <pmm.h>
 #include <sysconf.h>
 #include <lcpu.h>
-#include <x86.h>
+#include <arch.h>
 #include <trap.h>
 #include <lapic.h>
 #include <memlayout.h>

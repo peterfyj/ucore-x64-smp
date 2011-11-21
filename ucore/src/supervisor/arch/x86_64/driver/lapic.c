@@ -2,7 +2,7 @@
 #include <pmm.h>
 #include <sysconf.h>
 #include <trap.h>
-#include <x86.h>
+#include <arch.h>
 
 /* The LAPIC access */
 // Local APIC registers, divided by 4 for use as uint32[] indices.
