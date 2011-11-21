@@ -21,6 +21,9 @@
 #include <mp.h>
 #include <entry.h>
 
+#define current (pls_read(current))
+#define idleproc (pls_read(idleproc))
+
 #define TICK_NUM 30
 
 static const char *
@@ -254,6 +257,7 @@ trap(struct trapframe *tf) {
 void
 ipi(struct trapframe *tf)
 {
+	int lapic_id = pls_read(lapic_id);
 	if (ipi_raise[lapic_id])
 	{
 		// kprintf("LCPU %d GOT IPI\n", lcpu_idx);

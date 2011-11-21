@@ -194,6 +194,8 @@ swap_init(void) {
 //                - then call kswapd kernel thread.
 bool
 try_free_pages(size_t n) {
+	struct proc_struct *current = pls_read(current);
+
     if (!swap_init_ok || kswapd == NULL) {
         return 0;
     }

@@ -16,6 +16,7 @@ typedef struct lcpu_info_s
 typedef struct lcpu_static_s
 {
 	pgd_t *init_pgdir;
+	uintptr_t pls_base;
 	intr_handler_f intr_handler[256];
 
 	lcpu_info_s public;

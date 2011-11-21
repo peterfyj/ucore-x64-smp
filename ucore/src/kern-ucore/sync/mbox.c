@@ -15,6 +15,8 @@
 #include <clock.h>
 #include <string.h>
 
+#define current (pls_read(current))
+
 struct msg_seg {
     struct msg_seg *next;
 };

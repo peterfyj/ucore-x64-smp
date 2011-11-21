@@ -64,11 +64,12 @@ pgd_t * const vgd = (pgd_t *)PGADDR(PGX(VPT), PGX(VPT), PGX(VPT), PGX(VPT), 0);
  *   - 0x0 :  unused (always faults -- for trapping NULL far pointers)
  *   - 0x10:  kernel code segment
  *   - 0x20:  kernel data segment
- *   - 0x30:  user code segment
- *   - 0x40:  user data segment
- *   - 0x50:  defined for tss, initialized in gdt_init
+ *   - 0x30:  kernel pls segment
+ *   - 0x40:  user code segment
+ *   - 0x50:  user data segment
+ *   - 0x60:  defined for tss, initialized in gdt_init
  * */
-static struct segdesc gdt[5 + LAPIC_COUNT] = {
+static struct segdesc gdt[6 + LAPIC_COUNT] = {
     SEG_NULL,
     [SEG_KTEXT] = SEG(STA_X | STA_R, DPL_KERNEL),
     [SEG_KDATA] = SEG(STA_W, DPL_KERNEL),

@@ -39,6 +39,7 @@ Now, ucore didn't implementation 'Special Case&Operation for User Semaphore' in 
 
 */
 
+#define current (pls_read(current))
 
 #define VALID_SEMID(sem_id)                     \
     ((uintptr_t)(sem_id) < (uintptr_t)(sem_id) + PBASE)
