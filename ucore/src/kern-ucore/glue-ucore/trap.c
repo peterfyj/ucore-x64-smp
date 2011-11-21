@@ -175,12 +175,6 @@ trap_dispatch(struct trapframe *tf) {
         break;
     case T_SYSCALL:
 	case 0x6:
-		/* PETERF */
-		if (tf->tf_regs.reg_rax != SYS_write && 
-				tf->tf_regs.reg_rax != SYS_read &&
-				tf->tf_regs.reg_rax != SYS_putc)
-			kprintf("Syscall [%016x] detected!\n", tf->tf_regs.reg_rax);
-		/* PETERF */
         syscall();
         break;
     case IRQ_OFFSET + IRQ_TIMER:
