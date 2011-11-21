@@ -707,6 +707,7 @@ load_icode(int fd, int argc, char **kargv) {
     if ((ret = load_icode_read(fd, elf, sizeof(struct elfhdr), 0)) != 0) {
         goto bad_elf_cleanup_pgdir;
     }
+	
     if (elf->e_magic != ELF_MAGIC) {
         ret = -E_INVAL_ELF;
         goto bad_elf_cleanup_pgdir;
@@ -714,17 +715,17 @@ load_icode(int fd, int argc, char **kargv) {
 
     struct proghdr __ph, *ph = &__ph;
     uint32_t vm_flags, perm, phnum;
-    for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
-        off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
+	for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
+		off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
         if ((ret = load_icode_read(fd, ph, sizeof(struct proghdr), phoff)) != 0) {
-            goto bad_cleanup_mmap;
+			goto bad_cleanup_mmap;
         }
         if (ph->p_type != ELF_PT_LOAD) {
-            continue ;
+			continue ;
         }
         if (ph->p_filesz > ph->p_memsz) {
             ret = -E_INVAL_ELF;
-            goto bad_cleanup_mmap;
+			goto bad_cleanup_mmap;
         }
         if (ph->p_filesz == 0) {
             continue ;
@@ -738,6 +739,7 @@ load_icode(int fd, int argc, char **kargv) {
         if ((ret = mm_map(mm, ph->p_va, ph->p_memsz, vm_flags, NULL)) != 0) {
             goto bad_cleanup_mmap;
         }
+
         if (mm->brk_start < ph->p_va + ph->p_memsz) {
             mm->brk_start = ph->p_va + ph->p_memsz;
         }
@@ -879,7 +881,7 @@ failed_cleanup:
 
 int
 do_execve(const char *name, int argc, const char **argv) {   
-    static_assert(EXEC_MAX_ARG_LEN >= FS_MAX_FPATH_LEN);
+	static_assert(EXEC_MAX_ARG_LEN >= FS_MAX_FPATH_LEN);
     struct mm_struct *mm = current->mm;
     if (!(argc >= 1 && argc <= EXEC_MAX_ARG_NUM)) {
         return -E_INVAL;
@@ -945,6 +947,7 @@ do_execve(const char *name, int argc, const char **argv) {
     if ((ret = load_icode(fd, argc, kargv)) != 0) {
         goto execve_exit;
     }
+
     put_kargv(argc, kargv);
     de_thread(current);
     set_proc_name(current, local_name);

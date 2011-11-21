@@ -171,6 +171,13 @@ trap_dispatch(struct trapframe *tf) {
         }
         break;
     case T_SYSCALL:
+	case 0x6:
+		/* PETERF */
+		if (tf->tf_regs.reg_rax != SYS_write && 
+				tf->tf_regs.reg_rax != SYS_read &&
+				tf->tf_regs.reg_rax != SYS_putc)
+			kprintf("Syscall [%016x] detected!\n", tf->tf_regs.reg_rax);
+		/* PETERF */
         syscall();
         break;
     case IRQ_OFFSET + IRQ_TIMER:
@@ -193,12 +200,12 @@ trap_dispatch(struct trapframe *tf) {
     default:
         print_trapframe(tf);
         if (current != NULL) {
-            kprintf("unhandled trap.\n");
+			kprintf("unhandled trap.\n");
             do_exit(-E_KILLED);
         }
         panic("unexpected trap in kernel.\n");
     }
-
+	
 	if (tf->tf_trapno >= IRQ_OFFSET &&
 		tf->tf_trapno <  IRQ_OFFSET + IRQ_COUNT)
 		irq_ack(tf->tf_trapno - IRQ_OFFSET);

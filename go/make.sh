@@ -19,13 +19,18 @@ build_go()
 diff_go()
 {
 	original_go="`readlink "$CURRENT/../../go" -f`"
-	diff "$original_go/src" "$CURRENT/src" -r -q -x "Make.deps"
+	diff "$original_go/src" "$CURRENT/src" -r -x "Make.deps" -q
 }
 
 clean_go()
 {
 	cd $GOROOT/src
 	. ./clean.bash
+}
+
+compile_go()
+{
+	6g $1
 }
 
 case $1 in
@@ -37,7 +42,11 @@ case $1 in
 		diff_go
 		exit
 		;;
-	make | build | *)
+	compile)
+		compile_go $2
+		exit
+		;;
+	make | build)
 		build_go
 		exit
 		;;

@@ -307,7 +307,7 @@ mm_map(struct mm_struct *mm, uintptr_t addr, size_t len, uint32_t vm_flags,
         struct vma_struct **vma_store) {
     uintptr_t start = ROUNDDOWN(addr, PGSIZE), end = ROUNDUP(addr + len, PGSIZE);
     if (!USER_ACCESS(start, end)) {
-        return -E_INVAL;
+		return -E_INVAL;
     }
 
     assert(mm != NULL);
