@@ -15,7 +15,7 @@ all: ${T_OBJ}/supervisor ${T_OBJ}/kern-svsym.S.o ${T_OBJ}/kern-bin
 
 ${T_OBJ}/supervisor: ${OBJFILES} supervisor.ld
 	@echo LD $@
-	${V}${LD} -T supervisor.ld -z max-page-size=0x1000 -o$@ ${OBJFILES$} ${T_OBJ}/libs-sv-*.o 
+	${V}${LD} -T supervisor.ld -z max-page-size=0x1000 -o$@ ${OBJFILES$}
 
 ${T_OBJ}/svsym.o: ${T_OBJ}/supervisor
 	${V}objcopy --extract-symbol $< $@
