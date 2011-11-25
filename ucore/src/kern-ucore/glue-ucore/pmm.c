@@ -238,15 +238,6 @@ out:
     return 0;
 }
 
-// invalidate a TLB entry, but only if the page tables being
-// edited are the ones currently in use by the processor.
-void
-tlb_invalidate(pgd_t *pgdir, uintptr_t la) {
-    if (rcr3() == PADDR(pgdir)) {
-        invlpg((void *)la);
-    }
-}
-
 struct Page *
 pgdir_alloc_page(pgd_t *pgdir, uintptr_t la, uint32_t perm) {
     struct Page *page = alloc_page();

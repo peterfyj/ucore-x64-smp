@@ -9,6 +9,8 @@
 #include <sem.h>
 #include <event.h>
 #include <glue_mp.h>
+#include <elf.h>
+#include <arch_proc.h>
 
 // process's state in his life cycle
 enum proc_state {
@@ -18,30 +20,7 @@ enum proc_state {
     PROC_ZOMBIE,      // almost dead, and wait parent proc to reclaim his resource
 };
 
-#define PROC_ATTR_ROLE 3
-#define PROC_ATTR_ROLE_NORMAL 0
-#define PROC_ATTR_ROLE_IDLE   1
-
 #define PROC_IS_IDLE(proc)   (((proc)->attribute & PROC_ATTR_ROLE) == PROC_ATTR_ROLE_IDLE)
-
-struct context {
-    uint64_t rip;
-    uint64_t rsp;
-    uint64_t rdi;
-    uint64_t rsi;
-    uint64_t rdx;
-    uint64_t rcx;
-    uint64_t r8;
-    uint64_t r9;
-    uint64_t r10;
-    uint64_t r11;
-    uint64_t rbx;
-    uint64_t rbp;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-};
 
 #define PROC_NAME_LEN               15
 #define MAX_PROCESS                 4096
@@ -55,7 +34,6 @@ struct fs_struct;
 
 struct proc_struct {
     enum proc_state state;                      // Process state
-	// uint32_t attribute;                         // Special attributes
     int pid;                                    // Process ID
     int runs;                                   // the running times of Proces
     uintptr_t kstack;                           // Process kernel stack
@@ -73,6 +51,9 @@ struct proc_struct {
     uint32_t wait_state;                        // Process waiting state: the reason of sleeping
     struct proc_struct *cptr, *yptr, *optr;     // Process's children, yonger sibling, Old sibling
     list_entry_t thread_group;                  // the threads list including this proc which share resource (mem/file/sem...)
+
+	struct arch_proc_struct arch;               // Arch dependant info. See arch_proc.h
+
     struct run_queue *rq;                       // running queue contains Process
     list_entry_t run_link;                      // the entry linked in run queue
     int time_slice;                             // time slice for occupying the CPU
@@ -129,6 +110,17 @@ int do_sleep(unsigned int time);
 int do_mmap(uintptr_t *addr_store, size_t len, uint32_t mmap_flags);
 int do_munmap(uintptr_t addr, size_t len);
 int do_shmem(uintptr_t *addr_store, size_t len, uint32_t mmap_flags);
+
+/* Implemented by archs */
+struct proc_struct * alloc_proc(void);
+void switch_to(struct context *from, struct context *to);
+void de_thread_arch_hook (struct proc_struct *proc);
+int copy_thread(uint32_t clone_flags, struct proc_struct *proc,
+				uintptr_t user_stack, struct trapframe *tf);
+int init_new_context (struct proc_struct *proc, struct elfhdr *elf, int argc, char** kargv);
+int kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags);
+int kernel_execve(const char *name, const char **argv);
+int do_execve_arch_hook (int argc, char **kargv);
 
 #endif /* !__KERN_PROCESS_PROC_H__ */
 
