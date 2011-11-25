@@ -3,7 +3,7 @@
 #include <trap.h>
 #include <fs.h>
 #include <ide.h>
-#include <x86.h>
+#include <arch.h>
 #include <sem.h>
 #include <assert.h>
 #include <kio.h>

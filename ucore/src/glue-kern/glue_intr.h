@@ -3,10 +3,10 @@
 
 #ifdef LIBSPREFIX
 #include <libs/types.h>
-#include <libs/x86.h>
+#include <libs/arch.h>
 #else
 #include <types.h>
-#include <x86.h>
+#include <arch.h>
 #endif
 
 #include "glue_mmu.h"

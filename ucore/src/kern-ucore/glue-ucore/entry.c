@@ -9,7 +9,7 @@
 #include <fs.h>
 #include <clock.h>
 #include <intr.h>
-#include <x86/spinlock.h>
+#include <spinlock.h>
 #include <mp.h>
 #include <ide.h>
 #include <trap.h>

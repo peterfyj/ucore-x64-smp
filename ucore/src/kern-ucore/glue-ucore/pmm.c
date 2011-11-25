@@ -2,7 +2,6 @@
 #include <slab.h>
 #include <error.h>
 #include <assert.h>
-#include <x86.h>
 #include <string.h>
 #include <kio.h>
 #include <swap.h>

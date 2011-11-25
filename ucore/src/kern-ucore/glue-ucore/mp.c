@@ -1,6 +1,6 @@
 #include <mp.h>
 #include <trap.h>
-#include <x86/spinlock.h>
+#include <spinlock.h>
 #include <proc.h>
 #include <kio.h>
 #include <assert.h>

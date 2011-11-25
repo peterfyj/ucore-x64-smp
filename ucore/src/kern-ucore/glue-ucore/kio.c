@@ -2,7 +2,7 @@
 #include <glue_kio.h>
 #include <glue_intr.h>
 #include <stdio.h>
-#include <x86/spinlock.h>
+#include <spinlock.h>
 
 /* *
  * cputch - writes a single character @c to stdout, and it will

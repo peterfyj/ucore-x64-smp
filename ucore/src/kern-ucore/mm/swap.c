@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <vmm.h>
-#include <x86.h>
+#include <arch.h>
 #include <error.h>
 #include <atomic.h>
 #include <string.h>
@@ -681,9 +681,9 @@ check_swap(void) {
     check_mm_struct = mm;
 
     pgd_t *pgdir = mm->pgdir = init_pgdir_get();
-    assert(pgdir[0] == 0);
+    assert(pgdir[PGX(TEST_PAGE)] == 0);
 
-    struct vma_struct *vma = vma_create(0, PTSIZE, VM_WRITE | VM_READ);
+    struct vma_struct *vma = vma_create(TEST_PAGE, TEST_PAGE + PTSIZE, VM_WRITE | VM_READ);
     assert(vma != NULL);
 
     insert_vma_struct(mm, vma);
@@ -691,13 +691,14 @@ check_swap(void) {
     struct Page *rp0 = alloc_page(), *rp1 = alloc_page();
     assert(rp0 != NULL && rp1 != NULL);
 
-    pte_perm_t perm = 0;
+    pte_perm_t perm;
+	ptep_unmap (&perm);
 	ptep_set_u_write(&perm);
-    int ret = page_insert(pgdir, rp1, 0, perm);
+    int ret = page_insert(pgdir, rp1, TEST_PAGE, perm);
     assert(ret == 0 && page_ref(rp1) == 1);
 
     page_ref_inc(rp1);
-    ret = page_insert(pgdir, rp0, 0, perm);
+    ret = page_insert(pgdir, rp0, TEST_PAGE, perm);
     assert(ret == 0 && page_ref(rp1) == 1 && page_ref(rp0) == 1);
 
     // check try_alloc_swap_entry
@@ -762,14 +763,14 @@ check_swap(void) {
 
     // check swap_out_mm
 
-    pte_t *ptep0 = get_pte(pgdir, 0, 0), *ptep1;
+    pte_t *ptep0 = get_pte(pgdir, TEST_PAGE, 0), *ptep1;
     assert(ptep0 != NULL && pte2page(*ptep0) == rp0);
 
     ret = swap_out_mm(mm, 0);
     assert(ret == 0);
 
     ret = swap_out_mm(mm, 10);
-    assert(ret == 1 && mm->swap_address == PGSIZE);
+    assert(ret == 1 && mm->swap_address == TEST_PAGE + PGSIZE);
 
     ret = swap_out_mm(mm, 10);
     assert(ret == 0 && *ptep0 == entry && mem_map[1] == 1);
@@ -813,7 +814,7 @@ check_swap(void) {
 
     // page fault now
 
-    *(char *)0 = 0xEF;
+    *(char *)(TEST_PAGE) = 0xEF;
 
     rp0 = pte2page(*ptep0);
     assert(page_ref(rp0) == 1);
@@ -849,22 +850,23 @@ check_swap(void) {
 
     // duplictate *ptep0
 
-    ptep1 = get_pte(pgdir, PGSIZE, 0);
+    ptep1 = get_pte(pgdir, TEST_PAGE + PGSIZE, 0);
     assert(ptep1 != NULL && ptep_invalid(ptep1));
     swap_duplicate(*ptep0);
 	ptep_copy(ptep1, ptep0);
+	mp_tlb_invalidate (pgdir, TEST_PAGE + PGSIZE);
 
     // page fault again
     // update for copy on write
 
-    *(char *)1 = 0x88;
-    *(char *)(PGSIZE) = 0x8F;
-    *(char *)(PGSIZE + 1) = 0xFF;
+    *(char *)(TEST_PAGE + 1) = 0x88;
+    *(char *)(TEST_PAGE + PGSIZE) = 0x8F;
+    *(char *)(TEST_PAGE + PGSIZE + 1) = 0xFF;
     assert(pte2page(*ptep0) != pte2page(*ptep1));
-    assert(*(char *)0 == (char)0xEF);
-    assert(*(char *)1 == (char)0x88);
-    assert(*(char *)(PGSIZE) == (char)0x8F);
-    assert(*(char *)(PGSIZE + 1) == (char)0xFF);
+    assert(*(char *)(TEST_PAGE) == (char)0xEF);
+    assert(*(char *)(TEST_PAGE + 1) == (char)0x88);
+    assert(*(char *)(TEST_PAGE + PGSIZE) == (char)0x8F);
+    assert(*(char *)(TEST_PAGE + PGSIZE + 1) == (char)0xFF);
 
     rp0 = pte2page(*ptep0);
     rp1 = pte2page(*ptep1);
@@ -877,12 +879,12 @@ check_swap(void) {
     assert(list_empty(&(inactive_list.swap_list)));
 
 	ptep_set_accessed(&perm);
-    page_insert(pgdir, rp0, PGSIZE, perm);
+    page_insert(pgdir, rp0, TEST_PAGE + PGSIZE, perm);
 
     // check swap_out_mm
 
-    *(char *)0 = *(char *)PGSIZE = 0xEE;
-    mm->swap_address = PGSIZE * 2;
+    *(char *)(TEST_PAGE) = *(char *)(TEST_PAGE + PGSIZE) = 0xEE;
+    mm->swap_address = TEST_PAGE + PGSIZE * 2;
     ret = swap_out_mm(mm, 2);
     assert(ret == 0);
     assert(ptep_present(ptep0) && ! ptep_accessed(ptep0));
@@ -912,10 +914,10 @@ check_swap(void) {
     mem_map[2] = 1;
 	ptep_copy(ptep1, &store);
 
-    assert(*(char *)PGSIZE == (char)0xEE && *(char *)(PGSIZE + 1)== (char)0x88);
+    assert(*(char *)(TEST_PAGE + PGSIZE) == (char)0xEE && *(char *)(TEST_PAGE + PGSIZE + 1)== (char)0x88);
 
-    *(char *)PGSIZE = 1, *(char *)(PGSIZE + 1) = 2;
-    assert(*(char *)0 == (char)0xEE && *(char *)1 == (char)0x88);
+    *(char *)(TEST_PAGE + PGSIZE) = 1, *(char *)(TEST_PAGE + PGSIZE + 1) = 2;
+    assert(*(char *)TEST_PAGE == (char)0xEE && *(char *)(TEST_PAGE + 1) == (char)0x88);
 
     ret = swap_in_page(entry, &rp0);
     assert(ret == 0);
@@ -936,13 +938,13 @@ check_swap(void) {
         assert(list_empty(hash_list + i));
     }
 
-    page_remove(pgdir, 0);
-    page_remove(pgdir, PGSIZE);
+    page_remove(pgdir, TEST_PAGE);
+    page_remove(pgdir, (TEST_PAGE + PGSIZE));
 
-    free_page(pa2page(PMD_ADDR(*get_pmd(pgdir, 0, 0))));
-    free_page(pa2page(PUD_ADDR(*get_pud(pgdir, 0, 0))));
-    free_page(pa2page(PGD_ADDR(*get_pgd(pgdir, 0, 0))));
-    pgdir[0] = 0;
+    free_page(pa2page(PMD_ADDR(*get_pmd(pgdir, TEST_PAGE, 0))));
+    free_page(pa2page(PUD_ADDR(*get_pud(pgdir, TEST_PAGE, 0))));
+    free_page(pa2page(PGD_ADDR(*get_pgd(pgdir, TEST_PAGE, 0))));
+    pgdir[PGX(TEST_PAGE)] = 0;
 
     mm->pgdir = NULL;
     mm_destroy(mm);

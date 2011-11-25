@@ -9,6 +9,8 @@
 
 #include "glue_memlayout.h"
 
+#define TEST_PAGE         0x0
+
 #define kalloc_pages      (*kalloc_pages_ptr)
 #define kfree_pages       (*kfree_pages_ptr)
 #define kpage_private_set (*kpage_private_set_ptr)

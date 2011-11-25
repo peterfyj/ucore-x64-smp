@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <error.h>
 #include <pmm.h>
-#include <x86.h>
+#include <arch.h>
 #include <swap.h>
 #include <shmem.h>
 #include <proc.h>
@@ -545,47 +545,6 @@ user_mem_check(struct mm_struct *mm, uintptr_t addr, size_t len, bool write) {
     return KERN_ACCESS(addr, addr + len);
 }
 
-bool
-copy_from_user(struct mm_struct *mm, void *dst, const void *src, size_t len, bool writable) {
-    if (!user_mem_check(mm, (uintptr_t)src, len, writable)) {
-        return 0;
-    }
-    memcpy(dst, src, len);
-    return 1;
-}
-
-bool
-copy_to_user(struct mm_struct *mm, void *dst, const void *src, size_t len) {
-    if (!user_mem_check(mm, (uintptr_t)dst, len, 1)) {
-        return 0;
-    }
-    memcpy(dst, src, len);
-    return 1;
-}
-
-bool
-copy_string(struct mm_struct *mm, char *dst, const char *src, size_t maxn) {
-    size_t alen, part = ROUNDDOWN((uintptr_t)src + PGSIZE, PGSIZE) - (uintptr_t)src;
-    while (1) {
-        if (part > maxn) {
-            part = maxn;
-        }
-        if (!user_mem_check(mm, (uintptr_t)src, part, 0)) {
-            return 0;
-        }
-        if ((alen = strnlen(src, part)) < part) {
-            memcpy(dst, src, alen + 1);
-            return 1;
-        }
-        if (part == maxn) {
-            return 0;
-        }
-        memcpy(dst, src, part);
-        dst += part, src += part, maxn -= part;
-        part = PGSIZE;
-    }
-}
-
 // check_vmm - check correctness of vmm
 static void
 check_vmm(void) {
@@ -664,14 +623,14 @@ check_pgfault(void) {
 
     struct mm_struct *mm = check_mm_struct;
     pgd_t *pgdir = mm->pgdir = init_pgdir_get();
-    assert(pgdir[0] == 0);
+    assert(pgdir[PGX(TEST_PAGE)] == 0);
 
-    struct vma_struct *vma = vma_create(0, PTSIZE, VM_WRITE);
+    struct vma_struct *vma = vma_create(TEST_PAGE, TEST_PAGE + PTSIZE, VM_WRITE);
     assert(vma != NULL);
 
     insert_vma_struct(mm, vma);
 
-    uintptr_t addr = 0x100;
+    uintptr_t addr = TEST_PAGE + 0x100;
     assert(find_vma(mm, addr) == vma);
 
     int i, sum = 0;
@@ -688,7 +647,7 @@ check_pgfault(void) {
     free_page(pa2page(PMD_ADDR(*get_pmd(pgdir, addr, 0))));
     free_page(pa2page(PUD_ADDR(*get_pud(pgdir, addr, 0))));
     free_page(pa2page(PGD_ADDR(*get_pgd(pgdir, addr, 0))));
-    pgdir[0] = 0;
+    pgdir[PGX(TEST_PAGE)] = 0;
 
     mm->pgdir = NULL;
     mm_destroy(mm);
@@ -747,7 +706,8 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         }
     }
 
-    pte_perm_t perm = 0;
+    pte_perm_t perm;
+	ptep_unmap (&perm);
 	ptep_set_u_read(&perm);
     if (vma->vm_flags & VM_WRITE) {
 		ptep_set_u_write(&perm);

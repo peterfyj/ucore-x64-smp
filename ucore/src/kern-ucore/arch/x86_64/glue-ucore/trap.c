@@ -2,7 +2,7 @@
 #include <mmu.h>
 #include <memlayout.h>
 #include <trap.h>
-#include <x86.h>
+#include <arch.h>
 #include <stdio.h>
 #include <kdebug.h>
 #include <assert.h>
@@ -246,7 +246,7 @@ trap(struct trapframe *tf) {
 }
 
 #include <pmm.h>
-#include <x86/atom.h>
+#include <atom.h>
 void
 ipi(struct trapframe *tf)
 {
