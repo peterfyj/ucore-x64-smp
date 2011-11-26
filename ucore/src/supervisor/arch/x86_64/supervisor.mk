@@ -40,6 +40,6 @@ ${T_OBJ}/kern-bin: ${T_OBJ}/kern
 	${OBJCOPY} -S -O binary $^ $@
 	@T_OBJ=${T_OBJ} sh ${T_BASE}/misc/kerninfo.sh
 
-${T_OBJ}/kern: ${T_OBJ}/kern-*.o ../glue-kern/kern.ld
+${T_OBJ}/kern: ${T_OBJ}/kern-*.o
 	@echo LD $@
-	${V}${LD} -T ../glue-kern/kern.ld -z max-page-size=0x1000 -o$@ ${T_OBJ}/kern-*.o
+	${V}${LD} -T ../glue-kern/arch/${ARCH}/kern.ld -z max-page-size=0x1000 -o$@ ${T_OBJ}/kern-*.o

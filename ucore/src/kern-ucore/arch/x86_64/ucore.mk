@@ -1,4 +1,4 @@
-SRCFILES	+= $(shell find . '(' '!' -regex '.*/_.*' ')' -and '(' -iname "*.c" -or -iname "*.S" ')' | sed -e 's!\./!!g')
+SRCFILES	+= $(shell find . '(' '!' -regex '.*/_.*' ')' -and '(' -iname "*.c" -or -iname "*.S" ')' | sed -e 's!\./!!g') ../glue-kern/arch/${ARCH}/bootinfo.S
 ARCH_DIRS	:= debug driver process glue-ucore glue-ucore/libs
 T_CC_FLAGS	+= ${foreach dir,${ARCH_DIRS},-Iarch/${ARCH}/${dir}}
 
