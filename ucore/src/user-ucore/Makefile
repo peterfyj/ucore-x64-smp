@@ -4,7 +4,7 @@ E_DECODE = $(shell echo $(1) | sed -e 's!_1!_!g' -e 's!_2!/!g')
 .PHONY: all
 
 SRCFILES   := $(shell find . '(' '!' -regex '.*/_.*' ')' -and -iname "*.c"  | sed -e 's!\./!!g')
-T_CC_FLAGS := 	-I../libs-user-ucore/ -I../libs-user-ucore/common
+T_CC_FLAGS := 	-I../libs-user-ucore/ -I../libs-user-ucore/common -I../libs-user-ucore/arch/${ARCH}
 
 include ${T_BASE}/mk/compu.mk
 include ${T_BASE}/mk/template.mk
