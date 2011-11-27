@@ -14,6 +14,7 @@
 #include <host_syscall.h>
 #include <error.h>
 #include <kio.h>
+#include <console.h>
 
 #define current (pls_read(current))
 

@@ -7,6 +7,7 @@
 #include <memlayout.h>
 #include <arch.h>
 #include <sem.h>
+#include <kio.h>
 
 #define MAX_IDE                 4
 #define MAX_NSECS               128

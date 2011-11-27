@@ -71,41 +71,59 @@ printnum(void (*putch)(int, void*, int), int fd, void *putdat,
     putch("0123456789abcdef"[mod], putdat, fd);
 }
 
+#define GETINT_MACRO
+
 /* *
  * getuint - get an unsigned int of various possible sizes from a varargs list
  * @ap:         a varargs list pointer
  * @lflag:      determines the size of the vararg that @ap points to
  * */
+#ifdef GETINT_MACRO
+#define getuint(ap, lflag)												\
+	((lflag >= 2) ? (unsigned long long)va_arg(ap, unsigned long long) : \
+	 (lflag)      ? (unsigned long long)va_arg(ap, unsigned long) :		\
+	 (unsigned long long)va_arg(ap, unsigned int)						\
+	)
+#else
 static unsigned long long
 getuint(va_list ap, int lflag) {
     if (lflag >= 2) {
-        return va_arg(ap, unsigned long long);
+		return va_arg(ap, unsigned long long);
     }
     else if (lflag) {
-        return va_arg(ap, unsigned long);
+		return va_arg(ap, unsigned long);
     }
     else {
-        return va_arg(ap, unsigned int);
+		return va_arg(ap, unsigned int);
     }
 }
+#endif
 
 /* *
  * getint - same as getuint but signed, we can't use getuint because of sign extension
  * @ap:         a varargs list pointer
  * @lflag:      determines the size of the vararg that @ap points to
  * */
+#ifdef GETINT_MACRO
+#define getint(ap, lflag)												\
+	((lflag >= 2) ? (long long)va_arg(ap, long long) :					\
+	 (lflag)      ? (long long)va_arg(ap, long) :						\
+	 (long long)va_arg(ap, int)											\
+	)
+#else
 static long long
 getint(va_list ap, int lflag) {
     if (lflag >= 2) {
-        return va_arg(ap, long long);
+		return va_arg(ap, long long);
     }
     else if (lflag) {
-        return va_arg(ap, long);
+		return va_arg(ap, long);
     }
     else {
-        return va_arg(ap, int);
+		return va_arg(ap, int);
     }
 }
+#endif
 
 /* *
  * printfmt - format a string and print it by using putch
@@ -246,7 +264,7 @@ vprintfmt(void (*putch)(int, void*, int), int fd, void *putdat, const char *fmt,
 
         // (signed) decimal
         case 'd':
-            num = getint(ap, lflag);
+			num = getint(ap, lflag);
             if ((long long)num < 0) {
                 putch('-', putdat, fd);
                 num = -(long long)num;
@@ -256,13 +274,13 @@ vprintfmt(void (*putch)(int, void*, int), int fd, void *putdat, const char *fmt,
 
         // unsigned decimal
         case 'u':
-            num = getuint(ap, lflag);
+			num = getuint(ap, lflag);
             base = 10;
             goto number;
 
         // (unsigned) octal
         case 'o':
-            num = getuint(ap, lflag);
+			num = getuint(ap, lflag);
             base = 8;
             goto number;
 
@@ -276,7 +294,7 @@ vprintfmt(void (*putch)(int, void*, int), int fd, void *putdat, const char *fmt,
 
         // (unsigned) hexadecimal
         case 'x':
-            num = getuint(ap, lflag);
+			num = getuint(ap, lflag);
             base = 16;
         number:
             printnum(putch, fd, putdat, num, base, width, padc);

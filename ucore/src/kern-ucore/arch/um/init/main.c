@@ -3,6 +3,7 @@
 #include <intr.h>
 #include <host_signal.h>
 #include <pmm.h>
+#include <kio.h>
 
 void
 host_exit (int sig)
@@ -34,7 +35,7 @@ int main (int argc, char* argv[], char* envp[])
 	//device_init_post ();
 	//cpu_idle ();
 
-	//host_exit (SIGINT);
+	host_exit (SIGINT);
 	
 	return 0;
 }

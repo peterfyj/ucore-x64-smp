@@ -413,7 +413,7 @@ pmm_init (void)
 
 	boot_pgdir = boot_alloc_page();
 	memset(boot_pgdir, 0, PGSIZE);
-	//check_pgdir();
+	check_pgdir();
 
 	/* register kernel code and data pages in the table so that it won't raise bad segv. */
 	boot_map_segment (boot_pgdir, KERNBASE, mem_size, 0, PTE_W);

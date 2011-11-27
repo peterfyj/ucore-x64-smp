@@ -13,6 +13,7 @@
 #include <host_syscall.h>
 #include <syscall.h>
 #include <kio.h>
+#include <umclock.h>
 
 /**
  * Dump all registers from the copy in PCB.

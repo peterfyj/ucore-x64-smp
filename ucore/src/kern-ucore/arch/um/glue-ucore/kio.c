@@ -3,6 +3,8 @@
 #include <glue_intr.h>
 #include <stdio.h>
 #include <spinlock.h>
+#include <stdarg.h>
+#include <unistd.h>
 
 /* *
  * cputch - writes a single character @c to stdout, and it will
@@ -31,7 +33,7 @@ vkprintf(const char *fmt, va_list ap) {
 	int flag;
 	local_intr_save_hw(flag);
 	spinlock_acquire(&kprintf_lock);
-    vprintfmt((void*)cputch, 0, &cnt, fmt, ap);
+    vprintfmt((void*)cputch, NO_FD, &cnt, fmt, ap);
 	spinlock_release(&kprintf_lock);
 	local_intr_restore_hw(flag);
     return cnt;

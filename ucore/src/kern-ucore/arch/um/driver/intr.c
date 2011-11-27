@@ -2,6 +2,7 @@
 #include <arch.h>
 #include <assert.h>
 #include <stdio.h>
+#include <kio.h>
 
 static sigset_t disabled;
 

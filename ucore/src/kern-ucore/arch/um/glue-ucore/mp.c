@@ -1,4 +1,5 @@
 #include <mp.h>
+#include <pmm.h>
 #include <trap.h>
 #include <spinlock.h>
 #include <proc.h>

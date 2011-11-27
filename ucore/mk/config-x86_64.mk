@@ -19,3 +19,6 @@ qemu: all
 	-drive file=${T_OBJ}/sfs.img,media=disk,cache=writeback \
 	-s -S \
 	-serial file:${T_OBJ}/serial.log -monitor stdio
+
+debug: all
+	${V}gdb -q -x gdbinit.${ARCH}

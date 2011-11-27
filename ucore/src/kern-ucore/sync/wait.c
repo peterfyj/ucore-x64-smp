@@ -3,6 +3,7 @@
 #include <sync.h>
 #include <wait.h>
 #include <proc.h>
+#include <sched.h>
 
 #define current (pls_read(current))
 
