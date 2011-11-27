@@ -644,8 +644,12 @@ check_pgfault(void) {
     assert(sum == 0);
 
     page_remove(pgdir, ROUNDDOWN(addr, PGSIZE));
+#if PMXSHIFT != PUXSHIFT
     free_page(pa2page(PMD_ADDR(*get_pmd(pgdir, addr, 0))));
+#endif
+#if PUXSHIFT != PGXSHIFT
     free_page(pa2page(PUD_ADDR(*get_pud(pgdir, addr, 0))));
+#endif
     free_page(pa2page(PGD_ADDR(*get_pgd(pgdir, addr, 0))));
     pgdir[PGX(TEST_PAGE)] = 0;
 
@@ -750,7 +754,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
 
         if (!(!ptep_present(ptep) || ((error_code & 2) && !ptep_u_write(ptep) && cow)))
 		{
-			assert(PADDR(mm->pgdir) == rcr3());
+			//assert(PADDR(mm->pgdir) == rcr3());
 			kprintf("%p %p %d %d\n", *ptep, addr, error_code, cow);
 			assert(0);
 		}

@@ -2,16 +2,15 @@
 .DEFAULT_GOAL	:= all
 
 export ARCH				?=	x86_64
+export V        		?= @
+export T_BASE   		?= ${PWD}
+export T_OBJ    		?= ${PWD}/obj
+export MAKE     		:= make -s
 
 SUPPORTED_ARCH := x86_64 um
 ifneq (,$(findstring $(ARCH),$(SUPPORTED_ARCH)))
 include mk/config-${ARCH}.mk
 endif
-
-export V        		?= @
-export T_BASE   		?= ${PWD}
-export T_OBJ    		?= ${PWD}/obj
-export MAKE     		:= make -s
 
 export OBJDUMP			?= objdump
 export OBJCOPY 			?= objcopy

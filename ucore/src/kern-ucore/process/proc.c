@@ -90,8 +90,6 @@ list_entry_t proc_mm_list;
 static list_entry_t hash_list[HASH_LIST_SIZE];
 static int nr_process = 0;
 
-void forkrets(struct trapframe *tf);
-
 static int __do_exit(void);
 static int __do_kill(struct proc_struct *proc, int error_code); 
 
@@ -192,18 +190,6 @@ proc_run(struct proc_struct *proc) {
     }
 }
 
-// forkret -- the first kernel entry point of a new thread/process
-// NOTE: the addr of forkret is setted in copy_thread function
-//       after switch_to, the current proc will execute here.
-void
-forkret(void) {
-	if (!trap_in_kernel(current->tf))
-	{
-		kern_leave();
-	}
-    forkrets(current->tf);
-}
-
 // hash_proc - add proc into proc hash_list
 static void
 hash_proc(struct proc_struct *proc) {
@@ -257,8 +243,7 @@ setup_pgdir(struct mm_struct *mm) {
     }
     pgd_t *pgdir = page2kva(page);
     memcpy(pgdir, init_pgdir_get(), PGSIZE);
-	ptep_map(&(pgdir[PGX(VPT)]), PADDR(pgdir));
-	ptep_set_s_write(&(pgdir[PGX(VPT)]));
+	map_pgdir (pgdir);
     mm->pgdir = pgdir;
     return 0;
 }
@@ -758,25 +743,9 @@ load_icode(int fd, int argc, char **kargv) {
 	mm->lapic = pls_read(lapic_id);
     mp_set_mm_pagetable(mm);
 
-    uintptr_t stacktop = USTACKTOP - argc * PGSIZE;
-    char **uargv = (char **)(stacktop - argc * sizeof(char *));
-    int i;
-    for (i = 0; i < argc; i ++) {
-        uargv[i] = strcpy((char *)(stacktop + i * PGSIZE), kargv[i]);
-    }
-    stacktop = (uintptr_t)uargv;
+	if (init_new_context (current, elf, argc, kargv) < 0)
+		goto bad_cleanup_mmap;
 
-    struct trapframe *tf = current->tf;
-    memset(tf, 0, sizeof(struct trapframe));
-    tf->tf_cs = USER_CS;
-    tf->tf_ds = USER_DS;
-    tf->tf_es = USER_DS;
-    tf->tf_ss = USER_DS;
-    tf->tf_rsp = stacktop;
-    tf->tf_rip = elf->e_entry;
-    tf->tf_rflags = FL_IF;
-    tf->tf_regs.reg_rdi = argc;
-    tf->tf_regs.reg_rsi = (uintptr_t)uargv;
     ret = 0;
 out:
     return ret;
@@ -1358,14 +1327,5 @@ proc_init_ap(void)
 	pls_write(current, idleproc);
 
 	assert(idleproc != NULL && idleproc->pid == lcpu_idx);
-}
-
-// cpu_idle - at the end of kern_init, the first kernel thread idleproc will do below works
-void
-cpu_idle(void) {
-    while (1) {
-		assert((read_rflags() & FL_IF) != 0);
-		asm volatile ("hlt");
-    }
 }
 

@@ -4,9 +4,10 @@
 #include <string.h>
 #include <types.h>
 #include <stdlib.h>
+#include <mp.h>
 
-void kernel_thread_entry(void);
 void forkret(void);
+void forkrets(struct trapframe *tf);
 
 // alloc_proc - create a proc struct and init fields
 struct proc_struct *
@@ -69,6 +70,18 @@ kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
     return do_fork(clone_flags | CLONE_VM, 0, &tf);
 }
 
+// forkret -- the first kernel entry point of a new thread/process
+// NOTE: the addr of forkret is setted in copy_thread function
+//       after switch_to, the current proc will execute here.
+void
+forkret(void) {
+	if (!trap_in_kernel(pls_read(current)->tf))
+	{
+		kern_leave();
+	}
+    forkrets(pls_read(current)->tf);
+}
+
 int
 kernel_execve(const char *name, const char **argv) {
     int argc = 0, ret;
@@ -82,3 +95,40 @@ kernel_execve(const char *name, const char **argv) {
         : "memory");
     return ret;
 }
+
+#define current (pls_read(current))
+
+int
+init_new_context (struct proc_struct *proc, struct elfhdr *elf, int argc, char** kargv) {
+    uintptr_t stacktop = USTACKTOP - argc * PGSIZE;
+    char **uargv = (char **)(stacktop - argc * sizeof(char *));
+    int i;
+    for (i = 0; i < argc; i ++) {
+        uargv[i] = strcpy((char *)(stacktop + i * PGSIZE), kargv[i]);
+    }
+    stacktop = (uintptr_t)uargv;
+
+    struct trapframe *tf = current->tf;
+    memset(tf, 0, sizeof(struct trapframe));
+    tf->tf_cs = USER_CS;
+    tf->tf_ds = USER_DS;
+    tf->tf_es = USER_DS;
+    tf->tf_ss = USER_DS;
+    tf->tf_rsp = stacktop;
+    tf->tf_rip = elf->e_entry;
+    tf->tf_rflags = FL_IF;
+    tf->tf_regs.reg_rdi = argc;
+    tf->tf_regs.reg_rsi = (uintptr_t)uargv;
+
+	return 0;
+}
+
+// cpu_idle - at the end of kern_init, the first kernel thread idleproc will do below works
+void
+cpu_idle(void) {
+    while (1) {
+		assert((read_rflags() & FL_IF) != 0);
+		asm volatile ("hlt");
+    }
+}
+

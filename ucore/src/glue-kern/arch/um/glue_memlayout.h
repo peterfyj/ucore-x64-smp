@@ -54,6 +54,7 @@
  */
 
 #define KERNBASE           0xB0000000                    /* this is the lowest address we can map */
+#define PBASE              KERNBASE
 #define KMEMSIZE           0x8000000                     /* the maximum amount of physical memory */
 #define KERNTOP            (KERNBASE + KMEMSIZE)
 #define HOSTBASE           0xC0000000
@@ -90,37 +91,6 @@
 
 #ifndef __ASSEMBLER__
 
-#define E820MAX             20      // number of entries in E820MAP
-#define E820_ARM            1       // address range memory
-#define E820_ARR            2       // address range reserved
-
-struct E820MAP {
-    int nr_map;
-    struct {
-        uint64_t addr;
-        uint64_t size;
-        uint32_t type;
-    } __attribute__((packed)) map[E820MAX];
-
-};
-
-#define STATUS_RUN          0
-#define STATUS_DEBUG        1
-
-struct global_info {
-	int mem_fd;
-	int disk_fd; 
-	int disk_size;				/* in sector */
-	int swap_fd;
-	int swap_size;				/* in sector */
-	struct E820MAP mem_map;
-	
-	int status;
-};
-
-#define ginfo              ((struct global_info*)GLOBL_INFO)
-#define e820map            (ginfo->mem_map)
-
 #ifndef __BOOT__
 
 #include <types.h>
@@ -130,6 +100,9 @@ struct global_info {
 /* Basic types for mm. */
 typedef uintptr_t pte_t;
 typedef uintptr_t pde_t;
+typedef uintptr_t pud_t;
+typedef uintptr_t pmd_t;
+typedef uintptr_t pgd_t;
 typedef pte_t swap_entry_t;
 
 /* *
@@ -184,7 +157,39 @@ typedef struct {
 	unsigned int nr_free;			// # of free pages in this free list
 } free_area_t;
 
-#endif  /* !__ASSEMBLER__ */
 #endif  /* !__BOOT__ */
+
+#define E820MAX             20      // number of entries in E820MAP
+#define E820_ARM            1       // address range memory
+#define E820_ARR            2       // address range reserved
+
+struct E820MAP {
+    int nr_map;
+    struct {
+        uint64_t addr;
+        uint64_t size;
+        uint32_t type;
+    } __attribute__((packed)) map[E820MAX];
+
+};
+
+#define STATUS_RUN          0
+#define STATUS_DEBUG        1
+
+struct global_info {
+	int mem_fd;
+	int disk_fd; 
+	int disk_size;				/* in sector */
+	int swap_fd;
+	int swap_size;				/* in sector */
+	struct E820MAP mem_map;
+	
+	int status;
+};
+
+#define ginfo              ((struct global_info*)GLOBL_INFO)
+#define e820map            (ginfo->mem_map)
+
+#endif  /* !__ASSEMBLER__ */
 
 #endif  /* !__ARCH_UM_INCLUDE_MEMLAYOUT_H__ */

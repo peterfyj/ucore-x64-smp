@@ -95,6 +95,7 @@ int kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags);
 char *set_proc_name(struct proc_struct *proc, const char *name);
 char *get_proc_name(struct proc_struct *proc);
 void cpu_idle(void) __attribute__((noreturn));
+void kernel_thread_entry(void);
 
 struct proc_struct *find_proc(int pid);
 void may_killed(void);

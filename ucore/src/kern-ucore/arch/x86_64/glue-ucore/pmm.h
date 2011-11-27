@@ -8,6 +8,7 @@
 #include <types.h>
 #include <assert.h>
 #include <atomic.h>
+#include <proc.h>
 
 /* Simply translate between VA and PA without checking */
 #define KADDR(addr) ((void*)((uintptr_t)(addr) + PBASE))
@@ -105,7 +106,9 @@ void unmap_range(pgd_t *pgdir, uintptr_t start, uintptr_t end);
 void exit_range(pgd_t *pgdir, uintptr_t start, uintptr_t end);
 int copy_range(pgd_t *to, pgd_t *from, uintptr_t start, uintptr_t end, bool share);
 
-//void print_pgdir(void);
+void set_pgdir (struct proc_struct *proc, pgd_t *pgdir);
+void load_pgdir (struct proc_struct *proc);
+void map_pgdir (pgd_t *pgdir);
 
 void pmm_init_ap(void);
 

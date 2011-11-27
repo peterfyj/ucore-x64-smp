@@ -65,7 +65,6 @@ alloc_pages(size_t npages)
 		kpage_private_set(base + i * PGSIZE, page);
 	}
 
-	//used_pages += npages;
 	pls_write(used_pages, pls_read(used_pages) + npages);
 
 	local_intr_restore_hw(flags);
@@ -87,7 +86,6 @@ free_pages(struct Page *base, size_t npages)
 	}
 	
 	kfree_pages(basepa, npages);
-//	used_pages -= npages;
 	pls_write(used_pages, pls_read(used_pages) - npages);
 
 	local_intr_restore_hw(flags);
@@ -114,6 +112,9 @@ get_pgd(pgd_t *pgdir, uintptr_t la, bool create) {
 
 pud_t *
 get_pud(pgd_t *pgdir, uintptr_t la, bool create) {
+#if PUXSHIFT == PGXSHIFT
+	return get_pgd(pgdir, la, create);
+#else /* PUXSHIFT == PGXSHIFT */
     pgd_t *pgdp;
     if ((pgdp = get_pgd(pgdir, la, create)) == NULL) {
         return NULL;
@@ -130,10 +131,14 @@ get_pud(pgd_t *pgdir, uintptr_t la, bool create) {
         ptep_set_u_write(pgdp);
     }
     return &((pud_t *)KADDR(PGD_ADDR(*pgdp)))[PUX(la)];
+#endif /* PUXSHIFT == PGXSHIFT */
 }
 
 pmd_t *
 get_pmd(pgd_t *pgdir, uintptr_t la, bool create) {
+#if PMXSHIFT == PUXSHIFT
+	return get_pud(pgdir, la, create);
+#else /* PMXSHIFT == PUXSHIFT */
     pud_t *pudp;
     if ((pudp = get_pud(pgdir, la, create)) == NULL) {
         return NULL;
@@ -150,10 +155,14 @@ get_pmd(pgd_t *pgdir, uintptr_t la, bool create) {
 		ptep_set_u_write(pudp);
     }
     return &((pmd_t *)KADDR(PUD_ADDR(*pudp)))[PMX(la)];
+#endif /* PMXSHIFT == PUXSHIFT */
 }
 
 pte_t *
 get_pte(pgd_t *pgdir, uintptr_t la, bool create) {
+#if PTXSHIFT == PMXSHIFT
+	return get_pmd(pgdir, la, create);
+#else /* PTXSHIFT == PMXSHIFT */
     pmd_t *pmdp;
     if ((pmdp = get_pmd(pgdir, la, create)) == NULL) {
         return NULL;
@@ -170,6 +179,7 @@ get_pte(pgd_t *pgdir, uintptr_t la, bool create) {
 		ptep_set_u_write(pmdp);
     }
     return &((pte_t *)KADDR(PMD_ADDR(*pmdp)))[PTX(la)];
+#endif /* PTXSHIFT == PMXSHIFT */
 }
 
 struct Page *

@@ -1,17 +1,11 @@
 #include <types.h>
 #include <stdio.h>
 #include <string.h>
-#include <mmu.h>
-#include <memlayout.h>
 #include <pmm.h>
 #include <buddy_pmm.h>
 #include <sync.h>
 #include <error.h>
-#include <lapic.h>
-#include <sysconf.h>
-#include <memmap.h>
 #include <spinlock.h>
-#include <kern.h>
 
 // virtual address of physicall page array
 struct Page *pages;

@@ -16,6 +16,7 @@
 #include <sync.h>
 #include <kio.h>
 #include <mp.h>
+#include <sched.h>
 
 /* ------------- swap in/out & page replacement mechanism design&implementation -------------
 Hardware Requrirement:
@@ -940,8 +941,12 @@ check_swap(void) {
     page_remove(pgdir, TEST_PAGE);
     page_remove(pgdir, (TEST_PAGE + PGSIZE));
 
+#if PMXSHIFT != PUXSHIFT
     free_page(pa2page(PMD_ADDR(*get_pmd(pgdir, TEST_PAGE, 0))));
+#endif
+#if PUXSHIFT != PGXSHIFT
     free_page(pa2page(PUD_ADDR(*get_pud(pgdir, TEST_PAGE, 0))));
+#endif
     free_page(pa2page(PGD_ADDR(*get_pgd(pgdir, TEST_PAGE, 0))));
     pgdir[PGX(TEST_PAGE)] = 0;
 
