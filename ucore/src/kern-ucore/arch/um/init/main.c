@@ -4,6 +4,10 @@
 #include <host_signal.h>
 #include <pmm.h>
 #include <kio.h>
+#include <vmm.h>
+#include <proc.h>
+#include <sched.h>
+#include <mp.h>
 
 void
 host_exit (int sig)
@@ -22,13 +26,19 @@ int main (int argc, char* argv[], char* envp[])
 	
 	cons_init ();
 	intr_init ();
+	ide_init ();
+
+	host_signal_init ();
+
+	/* Only to initialize lcpu_count. */
+	mp_init ();
 
 	pmm_init ();
-	//vmm_init ();
-    //sched_init();
-	//proc_init ();
+	vmm_init ();
+    sched_init();
+	proc_init ();
 	
-	//swap_init ();
+	swap_init ();
 	//fs_init ();
     //sync_init();
 

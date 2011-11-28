@@ -265,6 +265,8 @@ de_thread(struct proc_struct *proc) {
         }
         local_intr_restore(intr_flag);
     }
+
+	de_thread_arch_hook (proc);
 }
 
 // next_thread - get the next thread "proc" from thread_group list
@@ -468,7 +470,9 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     if (copy_mm(clone_flags, proc) != 0) {
         goto bad_fork_cleanup_fs;
     }
-    copy_thread(clone_flags, proc, stack, tf);
+    if (copy_thread(clone_flags, proc, stack, tf) != 0) {
+		goto bad_fork_cleanup_sem;
+	}
 
     bool intr_flag;
     local_intr_save(intr_flag);
@@ -769,6 +773,7 @@ put_kargv(int argc, char **kargv) {
 static int
 copy_kargv(struct mm_struct *mm, int argc, char **kargv, const char **argv) {
     int i, ret = -E_INVAL;
+	char *argv_k;
     if (!user_mem_check(mm, (uintptr_t)argv, sizeof(const char *) * argc, 0)) {
         return ret;
     }
@@ -777,7 +782,8 @@ copy_kargv(struct mm_struct *mm, int argc, char **kargv, const char **argv) {
         if ((buffer = kmalloc(EXEC_MAX_ARG_LEN + 1)) == NULL) {
             goto failed_nomem;
         }
-        if (!copy_string(mm, buffer, argv[i], EXEC_MAX_ARG_LEN + 1)) {
+        if (!copy_from_user (mm, &argv_k, argv + i, sizeof (char*), 0) ||
+			!copy_string(mm, buffer, argv_k, EXEC_MAX_ARG_LEN + 1)) {
             kfree(buffer);
             goto failed_cleanup;
         }
@@ -821,7 +827,8 @@ do_execve(const char *name, int argc, const char **argv) {
         unlock_mm(mm);
         return ret;
     }
-    path = argv[0];
+    //path = argv[0];
+	copy_from_user (mm, &path, argv, sizeof (char*), 0);
     unlock_mm(mm);
 
     fs_closeall(current->fs_struct);
@@ -860,9 +867,13 @@ do_execve(const char *name, int argc, const char **argv) {
     if ((ret = load_icode(fd, argc, kargv)) != 0) {
         goto execve_exit;
     }
-    put_kargv(argc, kargv);
     de_thread(current);
     set_proc_name(current, local_name);
+
+	if (do_execve_arch_hook (argc, kargv) < 0)
+		goto execve_exit;
+	
+    put_kargv(argc, kargv);
     return 0;
 
 execve_exit:
@@ -1025,7 +1036,7 @@ do_brk(uintptr_t *brk_store) {
     }
     mm->brk = newbrk;
 out_unlock:
-    *brk_store = mm->brk;
+	copy_to_user (mm, brk_store, &mm->brk, sizeof (uintptr_t));
     unlock_mm(mm);
     return 0;
 }
@@ -1085,7 +1096,7 @@ do_mmap(uintptr_t *addr_store, size_t len, uint32_t mmap_flags) {
         }
     }
     if ((ret = mm_map(mm, addr, len, vm_flags, NULL)) == 0) {
-        *addr_store = addr;
+		copy_to_user (mm, addr_store, &addr, sizeof (uintptr_t));
     }
 out_unlock:
     unlock_mm(mm);
@@ -1153,7 +1164,7 @@ do_shmem(uintptr_t *addr_store, size_t len, uint32_t mmap_flags) {
         shmem_destroy(shmem);
         goto out_unlock;
     }
-    *addr_store = addr;
+	copy_to_user (mm, addr_store, &addr, sizeof (uintptr_t));
 out_unlock:
     unlock_mm(mm);
     return ret;
@@ -1238,7 +1249,7 @@ init_main(void *arg) {
     kprintf("all user-mode processes have quit.\n");
     assert(initproc->cptr == kswapd && initproc->yptr == NULL && initproc->optr == NULL);
     assert(kswapd->cptr == NULL && kswapd->yptr == NULL && kswapd->optr == NULL);
-    assert(nr_process == 3);
+    assert(nr_process == 2 + pls_read(lcpu_count));
     assert(nr_used_pages_store == nr_used_pages());
     assert(slab_allocated_store == slab_allocated());
     kprintf("init check memory pass.\n");

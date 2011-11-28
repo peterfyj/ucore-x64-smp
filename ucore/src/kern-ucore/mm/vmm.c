@@ -629,7 +629,6 @@ check_pgfault(void) {
     assert(vma != NULL);
 
     insert_vma_struct(mm, vma);
-
     uintptr_t addr = TEST_PAGE + 0x100;
     assert(find_vma(mm, addr) == vma);
 
@@ -664,7 +663,7 @@ check_pgfault(void) {
 }
 
 int
-do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
+do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr) {
 	struct proc_struct *current = pls_read(current);
 	
     if (mm == NULL) {

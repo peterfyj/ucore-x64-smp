@@ -14,6 +14,7 @@
 #include <kio.h>
 #include <glue_mp.h>
 #include <proc.h>
+#include <slab.h>
 
 #define current pls_read(current)
 
@@ -420,4 +421,6 @@ pmm_init (void)
 
 	check_boot_pgdir ();
 	print_pgdir (kprintf);
+
+	slab_init ();
 }

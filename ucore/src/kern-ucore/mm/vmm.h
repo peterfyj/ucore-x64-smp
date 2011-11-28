@@ -80,7 +80,7 @@ void exit_mmap(struct mm_struct *mm);
 uintptr_t get_unmapped_area(struct mm_struct *mm, size_t len);
 int mm_brk(struct mm_struct *mm, uintptr_t addr, size_t len);
 
-int do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr);
+int do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr);
 bool user_mem_check(struct mm_struct *mm, uintptr_t start, size_t len, bool write);
 
 bool copy_from_user(struct mm_struct *mm, void *dst, const void *src, size_t len, bool writable);

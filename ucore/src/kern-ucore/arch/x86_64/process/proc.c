@@ -132,3 +132,10 @@ cpu_idle(void) {
     }
 }
 
+int
+do_execve_arch_hook (int argc, char** kargv) {
+	return 0;
+}
+
+void
+de_thread_arch_hook (struct proc_struct *proc) {}

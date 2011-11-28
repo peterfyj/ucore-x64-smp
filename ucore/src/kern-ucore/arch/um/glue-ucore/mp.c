@@ -10,8 +10,6 @@ PLS int pls_lapic_id;
 PLS int pls_lcpu_idx;
 PLS int pls_lcpu_count;
 
-static spinlock_s kern_lock = {0};
-
 PLS static int volatile pls_local_kern_locking;
 
 volatile int ipi_raise[LAPIC_COUNT] = {0};
@@ -28,8 +26,6 @@ mp_init(void)
 	pls_write (lapic_id, 0);
 	pls_write (lcpu_idx, 0);
 	pls_write (lcpu_count, 1);
-
-	pls_write (local_kern_locking, 0);
 	
 	return 0;
 }
