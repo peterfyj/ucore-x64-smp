@@ -61,6 +61,14 @@ nr_used_pages(void)
 	return pls_read (used_pages);
 }
 
+void
+pmm_init_ap(void)
+{
+	list_entry_t *page_struct_free_list = pls_get_ptr(page_struct_free_list);
+	list_init(page_struct_free_list);
+	pls_write (used_pages, 0);
+}
+
 /**************************************************
  * Page allocations.
  **************************************************/
@@ -82,6 +90,8 @@ try_again:
 	if (page == NULL && try_free_pages(n)) {
         goto try_again;
     }
+
+	pls_write(used_pages, pls_read(used_pages) + n);
 	return page;
 }
 
@@ -113,6 +123,7 @@ free_pages(struct Page *base, size_t n) {
 		pmm_manager->free_pages(base, n);
 	}
 	local_intr_restore(intr_flag);
+	pls_write(used_pages, pls_read(used_pages) - n);
 }
 
 /**

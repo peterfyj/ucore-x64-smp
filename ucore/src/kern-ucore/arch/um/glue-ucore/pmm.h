@@ -29,6 +29,7 @@ void check_pgdir(void);
 void check_boot_pgdir(void);
 
 void pmm_init(void);
+void pmm_init_ap(void);
 void boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, uintptr_t pa, uint32_t perm);
 
 struct Page *alloc_pages(size_t n);

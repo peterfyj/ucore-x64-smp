@@ -55,7 +55,7 @@ cons_init()
 	raw_settings.c_cc[VINTR] = 0;
 	raw_settings.c_cc[VERASE] = 0;
 	raw_settings.c_cc[VWERASE] = 0;
-	//syscall3 (__NR_ioctl, tty, TCSETS, (long)&raw_settings);
+	syscall3 (__NR_ioctl, tty, TCSETS, (long)&raw_settings);
 
 	head_ptr = tail_ptr = 0;
 	int pid = syscall0 (__NR_fork);
