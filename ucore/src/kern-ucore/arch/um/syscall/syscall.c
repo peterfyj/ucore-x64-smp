@@ -56,6 +56,12 @@ sys_clone(uint32_t arg[]) {
 }
 
 static uint32_t
+sys_exit_thread(uint32_t arg[]) {
+    int error_code = (int)arg[0];
+    return do_exit_thread(error_code);
+}
+
+static uint32_t
 sys_yield(uint32_t arg[]) {
     return do_yield();
 }
@@ -69,7 +75,7 @@ sys_sleep(uint32_t arg[]) {
 static uint32_t
 sys_kill(uint32_t arg[]) {
     int pid = (int)arg[0];
-    return do_kill(pid, E_UNSPECIFIED);
+    return do_kill(pid, -E_KILLED);
 }
 
 static uint32_t
@@ -335,6 +341,7 @@ static uint32_t (*syscalls[])(uint32_t arg[]) = {
     [SYS_wait]              sys_wait,
     [SYS_exec]              sys_exec,
     [SYS_clone]             sys_clone,
+    [SYS_exit_thread]       sys_exit_thread,
     [SYS_yield]             sys_yield,
     [SYS_kill]              sys_kill,
     [SYS_sleep]             sys_sleep,

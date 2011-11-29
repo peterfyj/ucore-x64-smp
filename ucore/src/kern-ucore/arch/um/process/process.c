@@ -316,7 +316,7 @@ userspace (struct um_pt_regs *regs)
 		}
 
 		if (pls_read(current)->flags & PF_EXITING) {
-			do_exit(-E_KILLED);
+			do_exit_thread (-E_KILLED);
 		}
 		if (pls_read(current)->need_resched) {
             schedule();
@@ -339,5 +339,5 @@ exit:
 		stack += 16;
 		addr += 16;
 	}
-	do_exit (err);
+	do_exit_thread (err);
 }

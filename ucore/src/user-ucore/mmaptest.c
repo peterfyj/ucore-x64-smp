@@ -7,7 +7,7 @@ main(void) {
     const int size = 4096;
     void *mapped[10] = {0};
 
-    uintptr_t addr;
+    uintptr_t addr = 0;
 
     assert(mmap(NULL, size, 0) != 0 && mmap((void *)0xC0000000, size, 0) != 0);
 

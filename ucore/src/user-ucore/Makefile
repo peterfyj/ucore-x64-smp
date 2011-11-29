@@ -13,7 +13,7 @@ include ${T_BASE}/mk/template.mk
 BINFILES := $(addprefix ${T_OBJ}/user-sfs/bin/,${SRCFILES:.c=})
 
 all: ${T_OBJ}/user-sfs ${BINFILES}
-	${V}cp _initial/* ${T_OBJ}/user-sfs/
+	${V}cp -r _initial/* ${T_OBJ}/user-sfs/
 
 ${T_OBJ}/user-sfs/bin/%: ${T_OBJ}/user-ucore-$(call E_ENCODE,%).c.o
 	@echo LD $@
