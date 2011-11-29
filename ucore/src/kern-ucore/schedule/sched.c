@@ -156,10 +156,12 @@ void
 schedule(void) {
     bool intr_flag;
     struct proc_struct *next;
+#ifndef MT_SUPPORT
 	list_entry_t head;
+	int lapic_id = pls_read(lapic_id);
+#endif
 	
     local_intr_save(intr_flag);
-	int lapic_id = pls_read(lapic_id);
 	int lcpu_count = pls_read(lcpu_count);
     {
         current->need_resched = 0;

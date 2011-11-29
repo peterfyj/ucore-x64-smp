@@ -29,6 +29,10 @@ int main (int argc, char* argv[], char* envp[])
 		raise (SIGTRAP);
 	
 	cons_init ();
+
+	const char *message = "(THU.CST) os is loading ...";
+    kprintf("%s\n\n", message);
+
 	intr_init ();
 	ide_init ();
 

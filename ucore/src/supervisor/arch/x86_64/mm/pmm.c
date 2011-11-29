@@ -34,7 +34,7 @@
  * mode, the x86-64 CPU will look in the TSS for SS0 and RSP0 and load their value
  * into SS and RSP respectively.
  * */
-static struct taskstate ts[LAPIC_COUNT] = {0};
+static struct taskstate ts[LAPIC_COUNT] = {{0}};
 
 static uintptr_t freemem;
 

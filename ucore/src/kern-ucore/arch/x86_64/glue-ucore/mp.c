@@ -141,7 +141,7 @@ mp_tlb_invalidate(pgd_t *pgdir, uintptr_t la)
 			/* XXX: idx=>lapic_id MAP!!!??? */
 			int lapic_id = i;
 			ipi_raise[lapic_id] = 1;
-			int r = lapic_ipi_issue(lapic_id);
+			lapic_ipi_issue(lapic_id);
 		}
 
 	// kprintf("LCPU %d ALL IPI ENDING\n", lcpu_idx);
