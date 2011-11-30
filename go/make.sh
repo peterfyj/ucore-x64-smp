@@ -9,6 +9,7 @@ export GOOS=ucoresmp
 export GOARCH=amd64
 export GOROOT=$CURRENT
 export PATH=$PATH:$GOROOT/bin
+export CGO_ENABLED=0
 
 build_go()
 {

@@ -10,13 +10,13 @@
 
 TEXT runtime·exit(SB),7,$0-8
 	MOVL	8(SP), DI
-	MOVL	$231, AX	// exitgroup - force all os threads to exit
+	MOVL	$149, AX	// exitgroup - force all os threads to exit
 	INT $0x80
 	RET
 
 TEXT runtime·exit1(SB),7,$0-8
 	MOVL	8(SP), DI
-	MOVL	$60, AX	// exit - exit the current os thread
+	MOVL	$1, AX	// exit - exit the current os thread
 	INT $0x80
 	RET
 
@@ -128,9 +128,9 @@ TEXT runtime·sigignore(SB),7,$0
 	RET
 
 TEXT runtime·sigreturn(SB),7,$0
-	MOVL	$15, AX	// rt_sigreturn
+	MOVL	$255, AX
 	INT $0x80
-	INT $3	// not reached
+	RET
 
 TEXT runtime·mmap(SB),7,$0
 	MOVQ	8(SP), DI
@@ -141,18 +141,14 @@ TEXT runtime·mmap(SB),7,$0
 	MOVL	32(SP), R8
 	MOVL	36(SP), R9
 
-	MOVL	$9, AX			// mmap
+	MOVL	$20, AX			// mmap
 	INT $0x80
-	CMPQ	AX, $0xfffffffffffff001
-	JLS	3(PC)
-	NOTQ	AX
-	INCQ	AX
 	RET
 
 TEXT runtime·munmap(SB),7,$0
 	MOVQ	8(SP), DI
 	MOVQ	16(SP), SI
-	MOVQ	$11, AX	// munmap
+	MOVQ	$91, AX	// munmap
 	INT $0x80
 	CMPQ	AX, $0xfffffffffffff001
 	JLS	2(PC)
@@ -164,17 +160,33 @@ TEXT runtime·notok(SB),7,$0
 	MOVQ	BP, (BP)
 	RET
 
-// int64 futex(int32 *uaddr, int32 op, int32 val,
-//	struct timespec *timeout, int32 *uaddr2, int32 val2);
-TEXT runtime·futex(SB),7,$0
-	MOVQ	8(SP), DI
-	MOVL	16(SP), SI
-	MOVL	20(SP), DX
-	MOVQ	24(SP), R10
-	MOVQ	32(SP), R8
-	MOVL	40(SP), R9
-	MOVL	$202, AX
-	INT $0x80
+// uint32 runtime·sem_init(uint32 value)
+TEXT runtime·sem_init(SB),7,$0
+	MOVL	$40, AX		// sys_sem_init;
+	MOVL	4(SP), DX
+	INT	$0x80
+	RET
+
+// uint32 runtime·sem_post(uint32 sema)
+TEXT runtime·sem_post(SB),7,$0
+	MOVL	$41, AX		// sys_sem_post;
+	MOVL	4(SP), DX
+	INT $0X80
+	RET
+
+// uint32 runtime·sem_wait(uint32 sema, uint timeout)
+TEXT runtime·sem_wait(SB),7,$0
+	MOVL	$42, AX		// sys_sem_wait;
+	MOVL	4(SP), DX
+	MOVL	8(SP), CX
+	INT $0X80
+	RET
+
+// uint32 runtime·sem_free(uint32 sema)
+TEXT runtime·sem_free(SB),7,$0
+	MOVL	$43, AX		// sys_sem_free;
+	MOVL	4(SP), DX
+	INT $0X80
 	RET
 
 // int64 clone(int32 flags, void *stack, M *m, G *g, void (*fn)(void));
@@ -224,13 +236,8 @@ TEXT runtime·clone(SB),7,$0
 	JMP	-3(PC)	// keep exiting
 
 TEXT runtime·sigaltstack(SB),7,$-8
-	MOVQ	new+8(SP), DI
-	MOVQ	old+16(SP), SI
-	MOVQ	$131, AX
+	MOVQ	$255, AX
 	INT $0x80
-	CMPQ	AX, $0xfffffffffffff001
-	JLS	2(PC)
-	CALL	runtime·notok(SB)
 	RET
 
 // set tls base to DI

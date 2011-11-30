@@ -31,17 +31,10 @@ void*
 runtime·SysAlloc(uintptr n)
 {
 	void *p;
-
+	p = nil;
 	mstats.sys += n;
-	p = runtime·mmap(nil, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0);
-	if(p < (void*)4096) {
-		if(p == (void*)EACCES) {
-			runtime·printf("runtime: mmap: access denied\n");
-			runtime·printf("if you're running SELinux, enable execmem for this process.\n");
-			runtime·exit(2);
-		}
-		return nil;
-	}
+	runtime·mmap((void*)&p, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0);
+	runtime·memclr(p, n);
 	return p;
 }
 
@@ -63,31 +56,29 @@ runtime·SysFree(void *v, uintptr n)
 void*
 runtime·SysReserve(void *v, uintptr n)
 {
-	void *p;
-
 	// On 64-bit, people with ulimit -v set complain if we reserve too
 	// much address space.  Instead, assume that the reservation is okay
 	// and check the assumption in SysMap.
 	if(sizeof(void*) == 8)
 		return v;
 	
-	p = runtime·mmap(v, n, PROT_NONE, MAP_ANON|MAP_PRIVATE, -1, 0);
-	if(p < (void*)4096) {
-		return nil;
-	}
+	void *p = v;
+
+	runtime·mmap((void*)&p, n, PROT_NONE, MAP_ANON|MAP_PRIVATE, -1, 0);
+
 	return p;
 }
 
 void
 runtime·SysMap(void *v, uintptr n)
 {
-	void *p;
+	void *p = v;
 	
 	mstats.sys += n;
 
 	// On 64-bit, we don't actually have v reserved, so tread carefully.
 	if(sizeof(void*) == 8) {
-		p = runtime·mmap(v, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0);
+		runtime·mmap((void*)&p, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0);
 		if(p != v && addrspace_free(v, n)) {
 			// On some systems, mmap ignores v without
 			// MAP_FIXED, so retry if the address space is free.
@@ -105,7 +96,7 @@ runtime·SysMap(void *v, uintptr n)
 		return;
 	}
 
-	p = runtime·mmap(v, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_FIXED|MAP_PRIVATE, -1, 0);
+	runtime·mmap((void*)&p, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_FIXED|MAP_PRIVATE, -1, 0);
 	if(p == (void*)ENOMEM)
 		runtime·throw("runtime: out of memory");
 	if(p != v)

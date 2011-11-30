@@ -126,9 +126,8 @@ runtime·signalstack(byte *p, int32 n)
 	st.ss_sp = p;
 	st.ss_size = n;
 	st.ss_flags = 0;
-	/* MARK BY PETERF */
 	return;
-	//runtime·sigaltstack(&st, nil);
+	//runtime·sigaltstack(&st, nil);	//PETER
 }
 
 static void

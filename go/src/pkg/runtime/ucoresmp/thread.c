@@ -14,15 +14,6 @@ int32 runtime·open(uint8*, int32, int32);
 int32 runtime·close(int32);
 int32 runtime·read(int32, void*, int32);
 
-// Linux futex.
-//
-//	futexsleep(uint32 *addr, uint32 val)
-//	futexwakeup(uint32 *addr)
-//
-// Futexsleep atomically checks if *addr == val and if so, sleeps on addr.
-// Futexwakeup wakes up threads sleeping on addr.
-// Futexsleep is allowed to wake up spuriously.
-
 enum
 {
 	MUTEX_UNLOCKED = 0,
@@ -51,36 +42,32 @@ static Timespec longtime =
 	0
 };
 
-// Atomically,
-//	if(*addr == val) sleep
-// Might be woken up spuriously; that's allowed.
+// Thread-safe allocation of a semaphore.
+// Psema points at a kernel semaphore key.
+// It starts out zero, meaning no semaphore.
+// Fill it in, being careful of others calling initsema
+// simultaneously.
 static void
-futexsleep(uint32 *addr, uint32 val)
+initsema(uint32 *psema, uint32 value)
 {
-	// Some Linux kernels have a bug where futex of
-	// FUTEX_WAIT returns an internal error code
-	// as an errno.  Libpthread ignores the return value
-	// here, and so can we: as it says a few lines up,
-	// spurious wakeups are allowed.
-	runtime·futex(addr, FUTEX_WAIT, val, &longtime, nil, 0);
-}
+	uint32 sema;
 
-// If any procs are sleeping on addr, wake up at most cnt.
-static void
-futexwakeup(uint32 *addr, uint32 cnt)
-{
-	int64 ret;
-
-	ret = runtime·futex(addr, FUTEX_WAKE, cnt, nil, nil, 0);
-
-	if(ret >= 0)
+	if(*psema != 0)	// already have one
 		return;
 
-	// I don't know that futex wakeup can return
-	// EAGAIN or EINTR, but if it does, it would be
-	// safe to loop and call futex again.
-	runtime·printf("futexwakeup addr=%p returned %D\n", addr, ret);
-	*(int32*)0x1006 = 0x1006;
+	sema = runtime·sem_init(value);
+	
+	// [MARK-PETER] runtime.cas:
+	// if (*psema == 0) {
+	//   *psema = sema;
+	//   return true;
+	// }
+	// else return false;
+	if(!runtime·cas(psema, 0, sema)){
+		// Someone else filled it in.  Use theirs.
+		runtime·sem_free(sema);
+		return;
+	}
 }
 
 static int32
@@ -113,92 +100,59 @@ getproccount(void)
 	return cnt ? cnt : 1;
 }
 
-// Possible lock states are MUTEX_UNLOCKED, MUTEX_LOCKED and MUTEX_SLEEPING.
-// MUTEX_SLEEPING means that there is presumably at least one sleeping thread.
-// Note that there can be spinning threads during all states - they do not
-// affect mutex's state.
-static void
-futexlock(Lock *l)
-{
-	uint32 i, v, wait, spin;
-
-	// Speculative grab for lock.
-	v = runtime·xchg(&l->key, MUTEX_LOCKED);
-	if(v == MUTEX_UNLOCKED)
-		return;
-
-	// wait is either MUTEX_LOCKED or MUTEX_SLEEPING
-	// depending on whether there is a thread sleeping
-	// on this mutex.  If we ever change l->key from
-	// MUTEX_SLEEPING to some other value, we must be
-	// careful to change it back to MUTEX_SLEEPING before
-	// returning, to ensure that the sleeping thread gets
-	// its wakeup call.
-	wait = v;
-
-	if(proccount == 0)
-		proccount = getproccount();
-
-	// On uniprocessor's, no point spinning.
-	// On multiprocessors, spin for ACTIVE_SPIN attempts.
-	spin = 0;
-	if(proccount > 1)
-		spin = ACTIVE_SPIN;
-
-	for(;;) {
-		// Try for lock, spinning.
-		for(i = 0; i < spin; i++) {
-			while(l->key == MUTEX_UNLOCKED)
-				if(runtime·cas(&l->key, MUTEX_UNLOCKED, wait))
-						return;
-			runtime·procyield(ACTIVE_SPIN_CNT);
-		}
-
-		// Try for lock, rescheduling.
-		for(i=0; i < PASSIVE_SPIN; i++) {
-			while(l->key == MUTEX_UNLOCKED)
-				if(runtime·cas(&l->key, MUTEX_UNLOCKED, wait))
-					return;
-			runtime·osyield();
-		}
-
-		// Sleep.
-		v = runtime·xchg(&l->key, MUTEX_SLEEPING);
-		if(v == MUTEX_UNLOCKED)
-			return;
-		wait = MUTEX_SLEEPING;
-		futexsleep(&l->key, MUTEX_SLEEPING);
-	}
-}
-
-static void
-futexunlock(Lock *l)
-{
-	uint32 v;
-
-	v = runtime·xchg(&l->key, MUTEX_UNLOCKED);
-	if(v == MUTEX_UNLOCKED)
-		runtime·throw("unlock of unlocked lock");
-	if(v == MUTEX_SLEEPING)
-		futexwakeup(&l->key, 1);
-}
-
 void
 runtime·lock(Lock *l)
 {
-	if(m->locks++ < 0)
-		runtime·throw("runtime·lock: lock count");
-	futexlock(l);
+	if(m->locks < 0)
+		runtime·throw("lock count");
+	m->locks++;
+	
+	if(runtime·xadd(&l->key, 1) > 1) {	// someone else has it; wait
+		// Allocate semaphore if needed.
+		if(l->sema == 0)
+			initsema(&l->sema, 0);
+		runtime·sem_wait(l->sema, 0);
+	}
 }
 
 void
 runtime·unlock(Lock *l)
 {
-	if(--m->locks < 0)
-		runtime·throw("runtime·unlock: lock count");
-	futexunlock(l);
+	m->locks--;
+	if(m->locks < 0)
+		runtime·throw("lock count");
+	
+	if(runtime·xadd(&l->key, -1) > 0) {	// someone else is waiting
+		// Allocate semaphore if needed.
+		if(l->sema == 0)
+			initsema(&l->sema, 0);
+		runtime·sem_post(l->sema);
+	}
 }
 
+// User-level semaphore implementation:
+// try to do the operations in user space on u,
+// but when it's time to block, fall back on the kernel semaphore k.
+// This is the same algorithm used in Plan 9.
+void
+runtime·usemacquire(Usema *s)
+{
+	if((int32)runtime·xadd(&s->u, -1) < 0) {
+		if(s->k == 0)
+			initsema(&s->k, 0);
+		runtime·sem_wait(s->k, 0);
+	}
+}
+
+void
+runtime·usemrelease(Usema *s)
+{
+	if((int32)runtime·xadd(&s->u, 1) <= 0) {
+		if(s->k == 0)
+			initsema(&s->k, 0);
+		runtime·sem_post(s->k);
+	}
+}
 
 // One-time notifications.
 void
@@ -210,15 +164,15 @@ runtime·noteclear(Note *n)
 void
 runtime·notewakeup(Note *n)
 {
-	runtime·xchg(&n->state, 1);
-	futexwakeup(&n->state, 1<<30);
+	n->wakeup = 1;
+	runtime·usemrelease(&n->sema);
 }
 
 void
 runtime·notesleep(Note *n)
 {
-	while(runtime·atomicload(&n->state) == 0)
-		futexsleep(&n->state, 0);
+	while(!n->wakeup)
+		runtime·usemacquire(&n->sema);
 }
 
 
@@ -281,7 +235,7 @@ runtime·osinit(void)
 void
 runtime·goenvs(void)
 {
-	runtime·goenvs_unix();
+	//runtime·goenvs_unix();
 }
 
 // Called to initialize a new m (including the bootstrap m).
