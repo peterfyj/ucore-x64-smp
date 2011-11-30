@@ -2,6 +2,7 @@
 #include <slab.h>
 #include <error.h>
 #include <assert.h>
+#include <atom.h>
 #include <string.h>
 #include <kio.h>
 #include <swap.h>
@@ -9,7 +10,7 @@
 #include <glue_intr.h>
 #include <mp.h>
 
-PLS static size_t pls_used_pages;
+static volatile size_t used_pages;
 PLS list_entry_t pls_page_struct_free_list;
 
 static struct Page *
@@ -65,7 +66,11 @@ alloc_pages(size_t npages)
 		kpage_private_set(base + i * PGSIZE, page);
 	}
 
-	pls_write(used_pages, pls_read(used_pages) + npages);
+	while (1)
+	{
+		size_t old = used_pages;
+		if (cmpxchg64(&used_pages, old, old + npages) == old) break;
+	}
 
 	local_intr_restore_hw(flags);
 	return result;
@@ -86,7 +91,11 @@ free_pages(struct Page *base, size_t npages)
 	}
 	
 	kfree_pages(basepa, npages);
-	pls_write(used_pages, pls_read(used_pages) - npages);
+	while (1)
+	{
+		size_t old = used_pages;
+		if (cmpxchg64(&used_pages, old, old - npages) == old) break;
+	}
 
 	local_intr_restore_hw(flags);
 }
@@ -94,7 +103,13 @@ free_pages(struct Page *base, size_t npages)
 size_t
 nr_used_pages(void)
 {
-	return pls_read (used_pages);
+	return used_pages;
+}
+
+void
+pmm_init(void)
+{
+	used_pages = 0;
 }
 
 void
@@ -102,7 +117,6 @@ pmm_init_ap(void)
 {
 	list_entry_t *page_struct_free_list = pls_get_ptr(page_struct_free_list);
 	list_init(page_struct_free_list);
-	pls_write (used_pages, 0);
 }
 
 pgd_t *

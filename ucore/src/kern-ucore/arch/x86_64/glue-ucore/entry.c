@@ -26,6 +26,8 @@ __kern_entry(void)
 	if (pls_read(lcpu_idx) == 0)
 	{
 		spinlock_acquire(&init_lock);
+
+		pmm_init();
 		
 		pmm_init_ap();
 		slab_init();

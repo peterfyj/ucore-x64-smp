@@ -110,6 +110,7 @@ void set_pgdir (struct proc_struct *proc, pgd_t *pgdir);
 void load_pgdir (struct proc_struct *proc);
 void map_pgdir (pgd_t *pgdir);
 
+void pmm_init(void);
 void pmm_init_ap(void);
 
 #endif
