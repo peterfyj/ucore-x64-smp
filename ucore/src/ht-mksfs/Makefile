@@ -1,6 +1,6 @@
 .PHONY: all
 
-SRCFILES   := $(shell find . '(' '!' -regex '.*/_.*' ')' -and '(' -iname "*.c" -or -iname "*.S" ')' | sed -e 's!\./!!g')
+SRCFILES   := mksfs.c
 T_CC_FLAGS := -Wall -O2 -D_FILE_OFFSET_BITS=64
 
 include ${T_BASE}/mk/comph.mk

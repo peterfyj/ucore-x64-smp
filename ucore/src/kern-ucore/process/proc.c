@@ -90,42 +90,8 @@ list_entry_t proc_mm_list;
 static list_entry_t hash_list[HASH_LIST_SIZE];
 static int nr_process = 0;
 
-void kernel_thread_entry(void);
-void forkrets(struct trapframe *tf);
-void switch_to(struct context *from, struct context *to);
-
 static int __do_exit(void);
 static int __do_kill(struct proc_struct *proc, int error_code); 
-
-// alloc_proc - create a proc struct and init fields
-static struct proc_struct *
-alloc_proc(void) {
-    struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
-    if (proc != NULL) {
-        proc->state = PROC_UNINIT;
-        proc->pid = -1;
-        proc->runs = 0;
-        proc->kstack = 0;
-        proc->need_resched = 0;
-        proc->parent = NULL;
-        proc->mm = NULL;
-        memset(&(proc->context), 0, sizeof(struct context));
-        proc->tf = NULL;
-        proc->cr3 = PADDR(init_pgdir_get());
-        proc->flags = 0;
-        memset(proc->name, 0, PROC_NAME_LEN);
-        proc->wait_state = 0;
-        proc->cptr = proc->optr = proc->yptr = NULL;
-        list_init(&(proc->thread_group));
-        proc->rq = NULL;
-        list_init(&(proc->run_link));
-        proc->time_slice = 0;
-        proc->sem_queue = NULL;
-        event_box_init(&(proc->event_box));
-        proc->fs_struct = NULL;
-    }
-    return proc;
-}
 
 // set_proc_name - set the name of proc
 char *
@@ -224,18 +190,6 @@ proc_run(struct proc_struct *proc) {
     }
 }
 
-// forkret -- the first kernel entry point of a new thread/process
-// NOTE: the addr of forkret is setted in copy_thread function
-//       after switch_to, the current proc will execute here.
-static void
-forkret(void) {
-	if (!trap_in_kernel(current->tf))
-	{
-		kern_leave();
-	}
-    forkrets(current->tf);
-}
-
 // hash_proc - add proc into proc hash_list
 static void
 hash_proc(struct proc_struct *proc) {
@@ -261,21 +215,6 @@ find_proc(int pid) {
         }
     }
     return NULL;
-}
-
-// kernel_thread - create a kernel thread using "fn" function
-// NOTE: the contents of temp trapframe tf will be copied to 
-//       proc->tf in do_fork-->copy_thread function
-int
-kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
-    struct trapframe tf;
-    memset(&tf, 0, sizeof(struct trapframe));
-    tf.tf_cs = KERNEL_CS;
-    tf.tf_ds = tf.tf_es = tf.tf_ss = KERNEL_DS;
-    tf.tf_regs.reg_rdi = (uint64_t)fn;
-    tf.tf_regs.reg_rsi = (uint64_t)arg;
-    tf.tf_rip = (uint64_t)kernel_thread_entry;
-    return do_fork(clone_flags | CLONE_VM, 0, &tf);
 }
 
 // setup_kstack - alloc pages with size KSTACKPAGE as process kernel stack
@@ -304,7 +243,7 @@ setup_pgdir(struct mm_struct *mm) {
     }
     pgd_t *pgdir = page2kva(page);
     memcpy(pgdir, init_pgdir_get(), PGSIZE);
-    pgdir[PGX(VPT)] = PADDR(pgdir) | PTE_P | PTE_W;
+	map_pgdir (pgdir);
     mm->pgdir = pgdir;
     return 0;
 }
@@ -326,6 +265,8 @@ de_thread(struct proc_struct *proc) {
         }
         local_intr_restore(intr_flag);
     }
+
+	de_thread_arch_hook (proc);
 }
 
 // next_thread - get the next thread "proc" from thread_group list
@@ -389,19 +330,6 @@ bad_pgdir_cleanup_mm:
     mm_destroy(mm);
 bad_mm:
     return ret;
-}
-
-static void
-copy_thread(struct proc_struct *proc, uintptr_t rsp, struct trapframe *tf) {
-    uintptr_t kstacktop = proc->kstack + KSTACKSIZE;
-    proc->tf = (struct trapframe *)kstacktop - 1;
-    *(proc->tf) = *tf;
-    proc->tf->tf_regs.reg_rax = 0;
-    proc->tf->tf_rsp = (rsp != 0) ? rsp : kstacktop;
-    proc->tf->tf_rflags |= FL_IF;
-
-    proc->context.rip = (uintptr_t)forkret;
-    proc->context.rsp = (uintptr_t)(proc->tf);
 }
 
 static int
@@ -542,7 +470,9 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     if (copy_mm(clone_flags, proc) != 0) {
         goto bad_fork_cleanup_fs;
     }
-    copy_thread(proc, stack, tf);
+    if (copy_thread(clone_flags, proc, stack, tf) != 0) {
+		goto bad_fork_cleanup_sem;
+	}
 
     bool intr_flag;
     local_intr_save(intr_flag);
@@ -717,9 +647,10 @@ load_icode(int fd, int argc, char **kargv) {
     }
 
     struct proghdr __ph, *ph = &__ph;
-    uint32_t vm_flags, perm, phnum;
-	for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
-		off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
+    uint32_t vm_flags, phnum;
+	pte_perm_t perm = 0;
+    for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
+        off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
         if ((ret = load_icode_read(fd, ph, sizeof(struct proghdr), phoff)) != 0) {
 			goto bad_cleanup_mmap;
         }
@@ -733,11 +664,12 @@ load_icode(int fd, int argc, char **kargv) {
         if (ph->p_filesz == 0) {
             continue ;
         }
-        vm_flags = 0, perm = PTE_U;
+        vm_flags = 0;
+		ptep_set_u_read(&perm);
         if (ph->p_flags & ELF_PF_X) vm_flags |= VM_EXEC;
         if (ph->p_flags & ELF_PF_W) vm_flags |= VM_WRITE;
         if (ph->p_flags & ELF_PF_R) vm_flags |= VM_READ;
-        if (vm_flags & VM_WRITE) perm |= PTE_W;
+        if (vm_flags & VM_WRITE) ptep_set_u_write(&perm);
 
         if ((ret = mm_map(mm, ph->p_va, ph->p_memsz, vm_flags, NULL)) != 0) {
             goto bad_cleanup_mmap;
@@ -817,25 +749,9 @@ load_icode(int fd, int argc, char **kargv) {
 	mm->lapic = pls_read(lapic_id);
     mp_set_mm_pagetable(mm);
 
-    uintptr_t stacktop = USTACKTOP - argc * PGSIZE;
-    char **uargv = (char **)(stacktop - argc * sizeof(char *));
-    int i;
-    for (i = 0; i < argc; i ++) {
-        uargv[i] = strcpy((char *)(stacktop + i * PGSIZE), kargv[i]);
-    }
-    stacktop = (uintptr_t)uargv;
+	if (init_new_context (current, elf, argc, kargv) < 0)
+		goto bad_cleanup_mmap;
 
-    struct trapframe *tf = current->tf;
-    memset(tf, 0, sizeof(struct trapframe));
-    tf->tf_cs = USER_CS;
-    tf->tf_ds = USER_DS;
-    tf->tf_es = USER_DS;
-    tf->tf_ss = USER_DS;
-    tf->tf_rsp = stacktop;
-    tf->tf_rip = elf->e_entry;
-    tf->tf_rflags = FL_IF;
-    tf->tf_regs.reg_rdi = argc;
-    tf->tf_regs.reg_rsi = (uintptr_t)uargv;
     ret = 0;
 out:
     return ret;
@@ -859,6 +775,7 @@ put_kargv(int argc, char **kargv) {
 static int
 copy_kargv(struct mm_struct *mm, int argc, char **kargv, const char **argv) {
     int i, ret = -E_INVAL;
+	char *argv_k;
     if (!user_mem_check(mm, (uintptr_t)argv, sizeof(const char *) * argc, 0)) {
         return ret;
     }
@@ -867,7 +784,8 @@ copy_kargv(struct mm_struct *mm, int argc, char **kargv, const char **argv) {
         if ((buffer = kmalloc(EXEC_MAX_ARG_LEN + 1)) == NULL) {
             goto failed_nomem;
         }
-        if (!copy_string(mm, buffer, argv[i], EXEC_MAX_ARG_LEN + 1)) {
+        if (!copy_from_user (mm, &argv_k, argv + i, sizeof (char*), 0) ||
+			!copy_string(mm, buffer, argv_k, EXEC_MAX_ARG_LEN + 1)) {
             kfree(buffer);
             goto failed_cleanup;
         }
@@ -911,7 +829,8 @@ do_execve(const char *name, int argc, const char **argv) {
         unlock_mm(mm);
         return ret;
     }
-    path = argv[0];
+    //path = argv[0];
+	copy_from_user (mm, &path, argv, sizeof (char*), 0);
     unlock_mm(mm);
 
     fs_closeall(current->fs_struct);
@@ -951,9 +870,13 @@ do_execve(const char *name, int argc, const char **argv) {
         goto execve_exit;
     }
 
-    put_kargv(argc, kargv);
     de_thread(current);
     set_proc_name(current, local_name);
+
+	if (do_execve_arch_hook (argc, kargv) < 0)
+		goto execve_exit;
+	
+    put_kargv(argc, kargv);
     return 0;
 
 execve_exit:
@@ -1116,7 +1039,7 @@ do_brk(uintptr_t *brk_store) {
     }
     mm->brk = newbrk;
 out_unlock:
-    *brk_store = mm->brk;
+	copy_to_user (mm, brk_store, &mm->brk, sizeof (uintptr_t));
     unlock_mm(mm);
     return 0;
 }
@@ -1176,7 +1099,7 @@ do_mmap(uintptr_t *addr_store, size_t len, uint32_t mmap_flags) {
         }
     }
     if ((ret = mm_map(mm, addr, len, vm_flags, NULL)) == 0) {
-        *addr_store = addr;
+		copy_to_user (mm, addr_store, &addr, sizeof (uintptr_t));
     }
 out_unlock:
     unlock_mm(mm);
@@ -1244,23 +1167,9 @@ do_shmem(uintptr_t *addr_store, size_t len, uint32_t mmap_flags) {
         shmem_destroy(shmem);
         goto out_unlock;
     }
-    *addr_store = addr;
+	copy_to_user (mm, addr_store, &addr, sizeof (uintptr_t));
 out_unlock:
     unlock_mm(mm);
-    return ret;
-}
-
-static int
-kernel_execve(const char *name, const char **argv) {
-    int argc = 0, ret;
-    while (argv[argc] != NULL) {
-        argc ++;
-    }
-    asm volatile (
-        "int %1;"
-        : "=a" (ret)
-        : "i" (T_SYSCALL), "0" (SYS_exec), "D" (name), "S" (argc), "d" (argv)
-        : "memory");
     return ret;
 }
 
@@ -1343,7 +1252,7 @@ init_main(void *arg) {
     kprintf("all user-mode processes have quit.\n");
     assert(initproc->cptr == kswapd && initproc->yptr == NULL && initproc->optr == NULL);
     assert(kswapd->cptr == NULL && kswapd->yptr == NULL && kswapd->optr == NULL);
-    assert(nr_process == 3);
+    assert(nr_process == 2 + pls_read(lcpu_count));
     assert(nr_used_pages_store == nr_used_pages());
     assert(slab_allocated_store == slab_allocated());
     kprintf("init check memory pass.\n");
@@ -1432,14 +1341,5 @@ proc_init_ap(void)
 	pls_write(current, idleproc);
 
 	assert(idleproc != NULL && idleproc->pid == lcpu_idx);
-}
-
-// cpu_idle - at the end of kern_init, the first kernel thread idleproc will do below works
-void
-cpu_idle(void) {
-    while (1) {
-		assert((read_rflags() & FL_IF) != 0);
-		asm volatile ("hlt");
-    }
 }
 

@@ -251,12 +251,11 @@ sysfile_getcwd(char *buf, size_t len) {
         return -E_INVAL;
     }
 
-    int ret = -E_INVAL;
     lock_mm(mm);
     {
         if (user_mem_check(mm, (uintptr_t)buf, len, 1)) {
             struct iobuf __iob, *iob = iobuf_init(&__iob, buf, len, 0);
-            ret = vfs_getcwd(iob);
+            vfs_getcwd(iob);
         }
     }
     unlock_mm(mm);

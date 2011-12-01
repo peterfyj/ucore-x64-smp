@@ -1,14 +1,24 @@
 .PHONY: all clean qemu
+.DEFAULT_GOAL	:= all
 
--include config.mk
+export ARCH				?=	x86_64
+export V        		?= @
+export T_BASE   		?= ${PWD}
+export T_OBJ    		?= ${PWD}/obj
+export MAKE     		:= make -s
 
-export V        ?= @
-export T_BASE   ?= ${PWD}
-export T_OBJ    ?= ${PWD}/obj
-export MAKE     := make -s
-QEMU            ?= qemu-system-x86_64
-export BRANCH   ?= ucore
-HAS_DRIVER_OS   ?= n
+SUPPORTED_ARCH := x86_64 um
+ifneq (,$(findstring $(ARCH),$(SUPPORTED_ARCH)))
+include mk/config-${ARCH}.mk
+endif
+
+export OBJDUMP			?= objdump
+export OBJCOPY 			?= objcopy
+export STRIP   			?= strip
+
+export BRANCH   		?= ucore
+
+HAS_DRIVER_OS   		?= n
 ifneq (${HAS_DRIVER_OS},n)
 override HAS_DRIVER_OS := y
 endif
@@ -18,9 +28,13 @@ ifeq (${BRANCH},linux-dos-module)
 all: ${T_OBJ}
 	${V}${MAKE} -f mk/mods.mk all
 else
+ifeq (,$(findstring $(ARCH),$(SUPPORTED_ARCH)))
+all:
+	$(V)echo "*** ERROR: No architecture names \""$(ARCH)\"
+else
 all: ${T_OBJ}
-	${V}${MAKE} -f mk/mods.mk all
-	${V}${MAKE} -f mk/image.mk all
+	${V}${MAKE} -f mk/arch-${ARCH}.mk all
+endif
 endif
 
 ${T_OBJ}:
@@ -35,10 +49,3 @@ clean:
 	-${V}rm -rf ${T_OBJ}/*
 endif
 
-qemu: all
-	${QEMU} -smp 4 -m 512 \
-	-hda ${T_OBJ}/kernel.img \
-	-drive file=${T_OBJ}/swap.img,media=disk,cache=writeback \
-	-drive file=${T_OBJ}/sfs.img,media=disk,cache=writeback \
-	-s -S \
-	-serial file:${T_OBJ}/serial.log -monitor stdio

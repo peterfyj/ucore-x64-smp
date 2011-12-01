@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <error.h>
 #include <pmm.h>
-#include <x86.h>
+#include <arch.h>
 #include <swap.h>
 #include <shmem.h>
 #include <proc.h>
@@ -545,47 +545,6 @@ user_mem_check(struct mm_struct *mm, uintptr_t addr, size_t len, bool write) {
     return KERN_ACCESS(addr, addr + len);
 }
 
-bool
-copy_from_user(struct mm_struct *mm, void *dst, const void *src, size_t len, bool writable) {
-    if (!user_mem_check(mm, (uintptr_t)src, len, writable)) {
-        return 0;
-    }
-    memcpy(dst, src, len);
-    return 1;
-}
-
-bool
-copy_to_user(struct mm_struct *mm, void *dst, const void *src, size_t len) {
-    if (!user_mem_check(mm, (uintptr_t)dst, len, 1)) {
-        return 0;
-    }
-    memcpy(dst, src, len);
-    return 1;
-}
-
-bool
-copy_string(struct mm_struct *mm, char *dst, const char *src, size_t maxn) {
-    size_t alen, part = ROUNDDOWN((uintptr_t)src + PGSIZE, PGSIZE) - (uintptr_t)src;
-    while (1) {
-        if (part > maxn) {
-            part = maxn;
-        }
-        if (!user_mem_check(mm, (uintptr_t)src, part, 0)) {
-            return 0;
-        }
-        if ((alen = strnlen(src, part)) < part) {
-            memcpy(dst, src, alen + 1);
-            return 1;
-        }
-        if (part == maxn) {
-            return 0;
-        }
-        memcpy(dst, src, part);
-        dst += part, src += part, maxn -= part;
-        part = PGSIZE;
-    }
-}
-
 // check_vmm - check correctness of vmm
 static void
 check_vmm(void) {
@@ -664,14 +623,13 @@ check_pgfault(void) {
 
     struct mm_struct *mm = check_mm_struct;
     pgd_t *pgdir = mm->pgdir = init_pgdir_get();
-    assert(pgdir[0] == 0);
+    assert(pgdir[PGX(TEST_PAGE)] == 0);
 
-    struct vma_struct *vma = vma_create(0, PTSIZE, VM_WRITE);
+    struct vma_struct *vma = vma_create(TEST_PAGE, TEST_PAGE + PTSIZE, VM_WRITE);
     assert(vma != NULL);
 
     insert_vma_struct(mm, vma);
-
-    uintptr_t addr = 0x100;
+    uintptr_t addr = TEST_PAGE + 0x100;
     assert(find_vma(mm, addr) == vma);
 
     int i, sum = 0;
@@ -685,10 +643,14 @@ check_pgfault(void) {
     assert(sum == 0);
 
     page_remove(pgdir, ROUNDDOWN(addr, PGSIZE));
+#if PMXSHIFT != PUXSHIFT
     free_page(pa2page(PMD_ADDR(*get_pmd(pgdir, addr, 0))));
+#endif
+#if PUXSHIFT != PGXSHIFT
     free_page(pa2page(PUD_ADDR(*get_pud(pgdir, addr, 0))));
+#endif
     free_page(pa2page(PGD_ADDR(*get_pgd(pgdir, addr, 0))));
-    pgdir[0] = 0;
+    pgdir[PGX(TEST_PAGE)] = 0;
 
     mm->pgdir = NULL;
     mm_destroy(mm);
@@ -701,7 +663,7 @@ check_pgfault(void) {
 }
 
 int
-do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
+do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr) {
 	struct proc_struct *current = pls_read(current);
 	
     if (mm == NULL) {
@@ -747,9 +709,11 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         }
     }
 
-    uint32_t perm = PTE_U;
+    pte_perm_t perm;
+	ptep_unmap (&perm);
+	ptep_set_u_read(&perm);
     if (vma->vm_flags & VM_WRITE) {
-        perm |= PTE_W;
+		ptep_set_u_write(&perm);
     }
     addr = ROUNDDOWN(addr, PGSIZE);
 
@@ -759,7 +723,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
     if ((ptep = get_pte(mm->pgdir, addr, 1)) == NULL) {
         goto failed;
     }
-    if (*ptep == 0) {
+    if (ptep_invalid(ptep)) {
         if (!(vma->vm_flags & VM_SHARE)) {
             if (pgdir_alloc_page(mm->pgdir, addr, perm) == NULL) {
                 goto failed;
@@ -769,17 +733,17 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
             lock_shmem(vma->shmem);
             uintptr_t shmem_addr = addr - vma->vm_start + vma->shmem_off;
             pte_t *sh_ptep = shmem_get_entry(vma->shmem, shmem_addr, 1);
-            if (sh_ptep == NULL || *sh_ptep == 0) {
+            if (sh_ptep == NULL || ptep_invalid(sh_ptep)) {
                 unlock_shmem(vma->shmem);
                 goto failed;
             }
             unlock_shmem(vma->shmem);
-            if (*sh_ptep & PTE_P) {
+            if (ptep_present(sh_ptep)) {
                 page_insert(mm->pgdir, pa2page(*sh_ptep), addr, perm);
             }
             else {
                 swap_duplicate(*ptep);
-                *ptep = *sh_ptep;
+				ptep_copy(ptep, sh_ptep);
             }
         }
     }
@@ -787,9 +751,9 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         struct Page *page, *newpage = NULL;
         bool cow = ((vma->vm_flags & (VM_SHARE | VM_WRITE)) == VM_WRITE), may_copy = 1;
 
-        if (!(!(*ptep & PTE_P) || ((error_code & 2) && !(*ptep & PTE_W) && cow)))
+        if (!(!ptep_present(ptep) || ((error_code & 2) && !ptep_u_write(ptep) && cow)))
 		{
-			assert(PADDR(mm->pgdir) == rcr3());
+			//assert(PADDR(mm->pgdir) == rcr3());
 			kprintf("%p %p %d %d\n", *ptep, addr, error_code, cow);
 			assert(0);
 		}
@@ -797,7 +761,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
         if (cow) {
             newpage = alloc_page();
         }
-        if (*ptep & PTE_P) {
+        if (ptep_present(ptep)) {
             page = pte2page(*ptep);
         }
         else {
@@ -808,7 +772,7 @@ do_pgfault(struct mm_struct *mm, uint64_t error_code, uintptr_t addr) {
                 goto failed;
             }
             if (!(error_code & 2) && cow) {
-                perm &= ~PTE_W;
+                ptep_unset_u_write(&perm);
                 may_copy = 0;
             }
         }

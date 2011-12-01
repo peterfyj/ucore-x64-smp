@@ -34,11 +34,17 @@ typedef unsigned long long uint64_t;
 
 #ifdef __UCORE_64__
 
+/* Machine word type. */
+typedef uint64_t machine_word_t;
+
 /* Pointers and addresses are 64 bits long in 64-bit platform. */
 typedef int64_t intptr_t;
 typedef uint64_t uintptr_t;
 
 #else /* not __UCORE_64__ (only used for 32-bit libs) */
+
+/* Machine word type. */
+typedef uint32_t machine_word_t;
 
 /* Pointers and addresses are 32 bits long in 32-bit platform. */
 typedef int32_t intptr_t;

@@ -1,5 +1,5 @@
 #include <types.h>
-#include <x86.h>
+#include <arch.h>
 #include <error.h>
 #include <stdio.h>
 #include <string.h>
@@ -71,11 +71,20 @@ printnum(void (*putch)(int, void*, int), int fd, void *putdat,
     putch("0123456789abcdef"[mod], putdat, fd);
 }
 
+#define GETINT_MACRO
+
 /* *
  * getuint - get an unsigned int of various possible sizes from a varargs list
  * @ap:         a varargs list pointer
  * @lflag:      determines the size of the vararg that @ap points to
  * */
+#ifdef GETINT_MACRO
+#define getuint(ap, lflag)												\
+	((lflag >= 2) ? (unsigned long long)va_arg(ap, unsigned long long) : \
+	 (lflag)      ? (unsigned long long)va_arg(ap, unsigned long) :		\
+	 (unsigned long long)va_arg(ap, unsigned int)						\
+	)
+#else
 static unsigned long long
 getuint(va_list ap, int lflag) {
     if (lflag >= 2) {
@@ -88,12 +97,20 @@ getuint(va_list ap, int lflag) {
         return va_arg(ap, unsigned int);
     }
 }
+#endif
 
 /* *
  * getint - same as getuint but signed, we can't use getuint because of sign extension
  * @ap:         a varargs list pointer
  * @lflag:      determines the size of the vararg that @ap points to
  * */
+#ifdef GETINT_MACRO
+#define getint(ap, lflag)												\
+	((lflag >= 2) ? (long long)va_arg(ap, long long) :					\
+	 (lflag)      ? (long long)va_arg(ap, long) :						\
+	 (long long)va_arg(ap, int)											\
+	)
+#else
 static long long
 getint(va_list ap, int lflag) {
     if (lflag >= 2) {
@@ -106,6 +123,7 @@ getint(va_list ap, int lflag) {
         return va_arg(ap, int);
     }
 }
+#endif
 
 /* *
  * printfmt - format a string and print it by using putch
