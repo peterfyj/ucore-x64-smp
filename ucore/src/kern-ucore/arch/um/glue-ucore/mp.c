@@ -55,3 +55,9 @@ mp_tlb_invalidate(pgd_t *pgdir, uintptr_t la)
 {
 	tlb_invalidate (pgdir, la);
 }
+
+void
+mp_tlb_update(pgd_t *pgdir, uintptr_t la)
+{
+	tlb_update (pgdir, la);
+}

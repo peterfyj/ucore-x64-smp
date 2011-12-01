@@ -147,6 +147,21 @@ pde2page(pde_t pde) {
     return pa2page(PDE_ADDR(pde));
 }
 
+static inline struct Page *
+pmd2page(pmd_t pmd) {
+    return pa2page(PMD_ADDR(pmd));
+}
+
+static inline struct Page *
+pud2page(pud_t pud) {
+    return pa2page(PUD_ADDR(pud));
+}
+
+static inline struct Page *
+pgd2page(pgd_t pgd) {
+    return pa2page(PGD_ADDR(pgd));
+}
+
 static inline int
 page_ref(struct Page *page) {
     return atomic_read(&(page->ref));

@@ -159,3 +159,8 @@ mp_tlb_invalidate(pgd_t *pgdir, uintptr_t la)
 	
 	local_intr_restore_hw(flag);
 }
+
+void
+mp_tlb_update(pgd_t *pgdir, uintptr_t la) {
+	mp_tlb_invalidate(pgdir, la);
+}

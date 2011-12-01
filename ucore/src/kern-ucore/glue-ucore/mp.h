@@ -24,5 +24,6 @@ void kern_leave(void);
 void mp_set_mm_pagetable(struct mm_struct *mm);
 void __mp_tlb_invalidate(pgd_t *pgdir, uintptr_t la);
 void mp_tlb_invalidate(pgd_t *pgdir, uintptr_t la);
+void mp_tlb_update(pgd_t *pgdir, uintptr_t la);
 
 #endif
