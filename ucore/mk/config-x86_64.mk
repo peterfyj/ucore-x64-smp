@@ -1,6 +1,6 @@
 QEMU            		?= qemu-system-x86_64
 export HOST_CC_PREFIX	?=
-export TARGET_CC_PREFIX	?= x86_64-elf-
+export TARGET_CC_PREFIX	?=
 export TARGET_CC_FLAGS_COMMON	?=	-ffreestanding \
 									-mno-red-zone \
 									-mno-mmx -mno-sse -mno-sse2 \
