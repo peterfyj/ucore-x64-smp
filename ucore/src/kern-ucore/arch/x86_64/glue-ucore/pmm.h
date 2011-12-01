@@ -10,6 +10,8 @@
 #include <atomic.h>
 #include <proc.h>
 
+extern struct segdesc pls_gdt[];
+
 /* Simply translate between VA and PA without checking */
 #define KADDR(addr) ((void*)((uintptr_t)(addr) + PBASE))
 #define PADDR(addr) ((uintptr_t)(addr) - PBASE)

@@ -74,7 +74,8 @@ jump_kern(void)
 		else if (i < kern_bootinfo.kern_data)
 		{
 			/* alloc all pls data */
-			struct Page *pls = alloc_page();
+			uintptr_t pls_size = kern_bootinfo.kern_data - kern_bootinfo.kern_pls;
+			struct Page *pls = alloc_pages(pls_size >> PGSHIFT);
 			lcpu_static[lapic_id()].pls_base = (uintptr_t)page2va(pls);
 			*pte = page2pa(pls) | PTE_W | PTE_P;
 		}

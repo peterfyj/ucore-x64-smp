@@ -10,6 +10,25 @@
 #include <glue_intr.h>
 #include <mp.h>
 
+#define SV_GDT_SIZE (6 + LAPIC_COUNT)
+
+/* *
+ * Global Descriptor Table:
+ *
+ * The kernel and user segments are identical (except for the DPL). To load
+ * the %ss register, the CPL must equal the DPL. Thus, we must duplicate the
+ * segments for the user and the kernel. Defined as follows:
+ *   - 0x0 :  unused (always faults -- for trapping NULL far pointers)
+ *   - 0x10:  kernel code segment
+ *   - 0x20:  kernel data segment
+ *   - 0x30:  kernel pls segment
+ *   - 0x40:  user code segment
+ *   - 0x50:  user data segment
+ *   - 0x60:  defined for tss, initialized in gdt_init
+ * */
+PLS struct segdesc pls_gdt[SV_GDT_SIZE];
+PLS struct pseudodesc pls_gdt_pd;
+
 static volatile size_t used_pages;
 PLS list_entry_t pls_page_struct_free_list;
 
@@ -106,6 +125,25 @@ nr_used_pages(void)
 	return used_pages;
 }
 
+/* Copy from supervisor/arch/x86_64/mm/pmm.c */
+static inline void
+lgdt(struct pseudodesc *pd) {
+    asm volatile ("lgdt (%0)" :: "r" (pd));
+    asm volatile ("movw %%ax, %%es" :: "a" (KERNEL_DS));
+    asm volatile ("movw %%ax, %%ds" :: "a" (KERNEL_DS));
+    // reload cs & ss
+    asm volatile (
+        "movq %%rsp, %%rax;"            // move %rsp to %rax
+        "pushq %1;"                     // push %ss
+        "pushq %%rax;"                  // push %rsp
+        "pushfq;"                       // push %rflags
+        "pushq %0;"                     // push %cs
+        "call 1f;"                      // push %rip
+        "jmp 2f;"
+        "1: iretq; 2:"
+        :: "i" (KERNEL_CS), "i" (KERNEL_DS));
+}
+
 void
 pmm_init(void)
 {
@@ -117,4 +155,12 @@ pmm_init_ap(void)
 {
 	list_entry_t *page_struct_free_list = pls_get_ptr(page_struct_free_list);
 	list_init(page_struct_free_list);
+
+	struct pseudodesc *gdt_pd = pls_get_ptr(gdt_pd);
+	struct segdesc *gdt = pls_get_ptr(gdt);
+	struct segdesc *sv_gdt = get_sv_gdt();
+	memcpy (gdt, sv_gdt, SV_GDT_SIZE * sizeof(struct segdesc));
+	gdt_pd->pd_lim = SV_GDT_SIZE * sizeof(struct segdesc) - 1;
+	gdt_pd->pd_base = (uintptr_t)gdt;
+	lgdt(gdt_pd);
 }

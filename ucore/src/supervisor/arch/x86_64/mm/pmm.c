@@ -436,3 +436,9 @@ print_pgdir(int (*printf)(const char *fmt, ...)) {
 }
 
 EXPORT_SYMBOL(print_pgdir);
+
+struct segdesc *
+get_sv_gdt() {
+	return gdt;
+}
+EXPORT_SYMBOL(get_sv_gdt);
