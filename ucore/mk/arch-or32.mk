@@ -3,7 +3,7 @@
 E_ENCODE ?= $(shell echo $(1) | sed -e 's!_!_1!g' -e 's!/!_2!g')
 E_DECODE ?= $(shell echo $(1) | sed -e 's!_1!_!g' -e 's!_2!/!g')
 
-MODS := bootloader kern-ucore ht-mksfs libs-user-ucore user-ucore
+MODS := bootloader ht-mksfs libs-user-ucore user-ucore
 
 MODDIRS := $(addprefix mod-,${MODS})
 
@@ -21,9 +21,9 @@ mod-%:
 
 ${T_OBJ}/swap.img:
 	@echo MAKE $@
-	${V}dd if=/dev/zero of=$@ bs=1M count=128
+	${V}dd if=/dev/zero of=$@ bs=1M count=6
 
 ${T_OBJ}/sfs.img: ${T_OBJ}/user-sfs-timestamp
 	@echo MAKE $@
-	${V}dd if=/dev/zero of=$@ bs=1M count=128
+	${V}dd if=/dev/zero of=$@ bs=1M count=10
 	${V}${T_OBJ}/tools-mksfs $@ ${T_OBJ}/user-sfs

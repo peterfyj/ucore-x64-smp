@@ -1,13 +1,13 @@
 .PHONY: all clean qemu
 .DEFAULT_GOAL	:= all
 
-export ARCH				?=	x86_64
+export ARCH				?= x86_64
 export V        		?= @
 export T_BASE   		?= ${PWD}
 export T_OBJ    		?= ${PWD}/obj
 export MAKE     		:= make -s
 
-SUPPORTED_ARCH := x86_64 um
+SUPPORTED_ARCH := x86_64 um or32
 ifneq (,$(findstring $(ARCH),$(SUPPORTED_ARCH)))
 include mk/config-${ARCH}.mk
 endif
