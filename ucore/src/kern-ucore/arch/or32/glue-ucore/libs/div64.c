@@ -1,4 +1,4 @@
-#include <or32.h>
+#include <arch.h>
 #include <types.h>
 
 /* Copied from lib/div64.c in Linux 2.39.1 */

@@ -14,7 +14,8 @@
 #include <swap.h>
 #include <proc.h>
 #include <sched.h>
-#include <or32.h>
+#include <arch.h>
+#include <kio.h>
 
 int kern_init(void) __attribute__((noreturn));
 
@@ -26,9 +27,10 @@ kern_init(void) {
     cons_init();                // init the console
 
     const char *message = "(THU.CST) os is loading ...";
-    cprintf ("%s\n\n", message);
+    kprintf ("%s\n\n", message);
 
 	pmm_init();                 // init physical memory management
+	pmm_init_ap ();
 
     pic_init();                 // init interrupt controller
 

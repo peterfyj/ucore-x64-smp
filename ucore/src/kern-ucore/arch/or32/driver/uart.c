@@ -1,4 +1,4 @@
-#include <or32.h>
+#include <arch.h>
 #include <board.h>
 #include <uart.h>
 

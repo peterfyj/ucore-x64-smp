@@ -5,7 +5,6 @@
 #include <gpio.h>
 #include <mmu.h>
 #include <memlayout.h>
-#include <trap.h>
 
 .macro  exception_vector name org
 	        .org \org
@@ -93,7 +92,7 @@ __exception_handle:
 		l.sfeq	r13, r0
 		l.bnf	continue             // if SPR_SR_SM is set, we don't need to switch stack
 		l.nop
-		load32i	r13, current
+		load32i	r13, pls_current
 		tophys  (r10, r13)
 		l.lwz	r13, 0(r10)          // this is what 'current' points to
 		l.sfeq	r13, r0

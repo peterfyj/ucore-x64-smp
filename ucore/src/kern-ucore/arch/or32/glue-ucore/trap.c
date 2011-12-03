@@ -1,6 +1,6 @@
 #include <trap.h>
 #include <types.h>
-#include <or32.h>
+#include <arch.h>
 #include <uart.h>
 #include <board.h>
 #include <clock.h>
@@ -16,12 +16,13 @@
 #include <syscall.h>
 #include <error.h>
 #include <sched.h>
+#include <kio.h>
 
 void
 bus_error_exception (struct trapframe *tf)
 {
 	print_trapframe (tf);
-	cprintf ("panic in assembly.\n");
+	kprintf ("panic in assembly.\n");
 	while (1);
 }
 
@@ -32,7 +33,7 @@ print_pgfault(uintptr_t address, uint32_t error_code) {
      * bit 1 == 0 means read, 1 means write
      * bit 2 == 0 means kernel, 1 means user
      * */
-    cprintf("page fault at 0x%08x: %c/%c [%s].\n", address,
+    kprintf("page fault at 0x%08x: %c/%c [%s].\n", address,
             (error_code & 4) ? 'U' : 'K',
             (error_code & 2) ? 'W' : ((error_code & 8) ? 'E' : 'R'),
             (error_code & 1) ? "protection fault" : "no page found");
@@ -49,7 +50,7 @@ do_pgmark (struct mm_struct *mm, uint32_t error_code, uintptr_t address)
 
 	pte_t* ptep = get_pte (mm->pgdir, address, 0);
 	if (ptep == 0) {
-		cprintf ("pte not exists\n");
+		kprintf ("pte not exists\n");
 		goto failed;
 	}
 	uint32_t write_perm = 0;
@@ -63,7 +64,7 @@ do_pgmark (struct mm_struct *mm, uint32_t error_code, uintptr_t address)
 		 * call do_pgfault and check the return val. */
 		//print_pgfault (address, error_code);
 		if ((do_pgfault (mm, error_code, address)) != 0) {
-			cprintf ("shared memory handle failed\n");
+			kprintf ("shared memory handle failed\n");
 			goto failed;
 		}
 	}
@@ -75,7 +76,7 @@ do_pgmark (struct mm_struct *mm, uint32_t error_code, uintptr_t address)
 		ptep_set_perm (ptep, PTE_SPR_W | PTE_USER_W);
 	}
 	
-	tlb_flush (mm->pgdir, address);
+	tlb_update (mm->pgdir, address);
 
 	return 0;
 
@@ -91,14 +92,14 @@ do_page_fault (struct trapframe *tf, uintptr_t address, uint32_t vector, uint32_
 	extern struct mm_struct *check_mm_struct;
 	struct mm_struct *mm;
     if (check_mm_struct != NULL) {
-        assert(current == idleproc);
+        assert(pls_read(current) == pls_read(idleproc));
         mm = check_mm_struct;
     } else {
-        if (current == NULL) {
+        if (pls_read(current) == NULL) {
             print_trapframe(tf);
             panic("unhandled page fault.\n");
         }
-        mm = current->mm;
+        mm = pls_read(current)->mm;
     }
 	
 	pte_t *ptep = get_pte (mm->pgdir, address, 0);
@@ -126,8 +127,8 @@ tick_timer_exception ()
 {
 	ticks ++;
 	//if (ticks % 100 == 0)
-	//	cprintf ("100 ticks\n");
-	assert (current != NULL);
+	//	kprintf ("100 ticks\n");
+	assert (pls_read(current) != NULL);
 	run_timer_list ();
 
 	/* Tell the timer that we have done. */
@@ -204,7 +205,7 @@ uart_irq_handler ()
 	do {
 		dev_stdin_write (uart_getc ());
 		//char c = uart_getc ();
-		//cprintf ("got: %c[%x]\n", c, c);
+		//kprintf ("got: %c[%x]\n", c, c);
 		c_iir = REG8 (UART_BASE + UART_IIR);
 	} while ((c_iir & UART_IIR_NO_INT) == 0);
 	
@@ -222,7 +223,7 @@ external_exception ()
 		uart_irq_handler ();
 		break;
 	default:
-		cprintf ("Unknown irq: 0x%x\n", irq);
+		kprintf ("Unknown irq: 0x%x\n", irq);
 	}
 }
 
@@ -233,10 +234,10 @@ trap_in_kernel(struct trapframe *tf) {
 
 void
 print_trapframe(struct trapframe *tf) {
-	cprintf ("EPCR: %08x\n", tf->pc);
-	cprintf ("ESR: %08x\n", tf->sr);
-	cprintf ("EEAR: %08x\n", tf->ea);
-	cprintf ("GPR01: %08x\n", tf->sp);
+	kprintf ("EPCR: %08x\n", tf->pc);
+	kprintf ("ESR: %08x\n", tf->sr);
+	kprintf ("EEAR: %08x\n", tf->ea);
+	kprintf ("GPR01: %08x\n", tf->sp);
 	print_regs (&(tf->regs));
 }
 
@@ -244,21 +245,20 @@ void
 print_regs(struct pushregs *regs) {
 	int i, j;
 	for (i = 2, j = 1; i < 32; i ++, j ++) {
-		cprintf ("GPR%02d: %08x", i, regs->gprs[i-2]);
+		kprintf ("GPR%02d: %08x", i, regs->gprs[i-2]);
 		if (j < 4)
-			cprintf ("\t");
+			kprintf ("\t");
 		else {
-			cprintf ("\n");
+			kprintf ("\n");
 			j = 0;
 		}
 	}
-	cprintf ("\n");
+	kprintf ("\n");
 }
 
 void
 trap_dispatch (struct trapframe *tf, uintptr_t address, uint32_t vector, uint32_t write_acc)
 {
-	char c;
 	int ret;
 	
 	switch (vector) {
@@ -269,13 +269,13 @@ trap_dispatch (struct trapframe *tf, uintptr_t address, uint32_t vector, uint32_
 	case EXCEPTION_IPAGE_FAULT:
 		if ((ret = do_page_fault (tf, address, vector, write_acc)) != 0) {
 			print_trapframe (tf);
-			if (current == NULL) {
+			if (pls_read(current) == NULL) {
 				panic ("handle pgfault failed %e.\n", ret);
 			} else {
 				if (trap_in_kernel (tf)) {
 					panic ("handle pgfault failed in kernel mode. %e\n", ret);
 				}
-				cprintf ("killed by kernel.\n");
+				kprintf ("killed by kernel.\n");
 				do_exit (-E_KILLED);
 			}
 		}
@@ -291,8 +291,8 @@ trap_dispatch (struct trapframe *tf, uintptr_t address, uint32_t vector, uint32_
 		break;
 	default:
 		print_trapframe (tf);
-		if (current != NULL) {
-			cprintf ("unhandled exception\n");
+		if (pls_read(current) != NULL) {
+			kprintf ("unhandled exception\n");
 			do_exit (-E_KILLED);
 		}
 		panic ("unhandled exception in kernel: 0x%x\n", vector);
@@ -303,22 +303,22 @@ void
 trap (struct trapframe *tf, uintptr_t address, uint32_t vector, uint32_t write_acc)
 {
 	tf->ea = address;
-	if (current == NULL) {
+	if (pls_read(current) == NULL) {
 		trap_dispatch (tf, address, vector, write_acc);
 	} else {
-		struct trapframe *otf = current->tf;
-		current->tf = tf;
+		struct trapframe *otf = pls_read(current)->tf;
+		pls_read(current)->tf = tf;
 
 		bool in_kernel = trap_in_kernel (tf);
 		
 		trap_dispatch (tf, address, vector, write_acc);
 		
-		current->tf = otf;
+		pls_read(current)->tf = otf;
 		if (!in_kernel) {
-			if (current->flags & PF_EXITING) {
+			if (pls_read(current)->flags & PF_EXITING) {
 				do_exit (-E_KILLED);
 			}
-			if (current->need_resched) {
+			if (pls_read(current)->need_resched) {
 				schedule ();
 			}
 		}

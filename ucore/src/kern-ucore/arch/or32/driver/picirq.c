@@ -1,5 +1,5 @@
 #include <picirq.h>
-#include <or32.h>
+#include <arch.h>
 
 void
 pic_enable(unsigned int irq) {

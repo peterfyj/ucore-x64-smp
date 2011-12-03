@@ -5,6 +5,8 @@
 #include <board.h>
 #include <assert.h>
 #include <stdio.h>
+#include <kio.h>
+#include <string.h>
 
 #define MAX_IDE         4
 
@@ -92,21 +94,21 @@ ide_init(void) {
 	ide_devices[DISK0_DEV_NO].valid = 1;
 	ide_devices[DISK0_DEV_NO].base = DISK_BASE + DISK_FS_BASE;
 	ide_devices[DISK0_DEV_NO].size = DISK_FS_SIZE / SECTSIZE;
-	strcpy (ide_devices[DISK0_DEV_NO].model, "RAM fs");
+	strcpy ((char *)ide_devices[DISK0_DEV_NO].model, "RAM fs");
 	sem_init (&(ide_devices[DISK0_DEV_NO].sem), 1);
 
 	/* Init swap fs */
 	ide_devices[SWAP_DEV_NO].valid = 1;
 	ide_devices[SWAP_DEV_NO].base = DISK_BASE + SWAP_FS_BASE;
 	ide_devices[SWAP_DEV_NO].size = SWAP_FS_SIZE / SECTSIZE;
-	strcpy (ide_devices[SWAP_DEV_NO].model, "RAM swap fs");
+	strcpy ((char *)ide_devices[SWAP_DEV_NO].model, "RAM swap fs");
 	sem_init (&(ide_devices[SWAP_DEV_NO].sem), 1);
 #endif
 
 	/* Print info about our disks */
 	for (i = 0; i < MAX_IDE; i++) {
 		if (ide_devices[i].valid)
-			cprintf ("ide: %d: %10u(sectors), '%s'.\n", i, ide_devices[i].size, ide_devices[i].model);
+			kprintf ("ide: %d: %10u(sectors), '%s'.\n", i, ide_devices[i].size, ide_devices[i].model);
 	}
 }
 
@@ -154,7 +156,6 @@ ide_read_secs(unsigned short ideno, uint32_t secno, void *dst, size_t nsecs) {
 	memcpy (dst, (void*)(ide_devices[ideno].base + secno * SECTSIZE), nsecs * SECTSIZE);
 #endif
 
-out:
 	unlock_device (ideno);
 	return ret;
 }
@@ -193,7 +194,6 @@ ide_write_secs(unsigned short ideno, uint32_t secno, const void *src, size_t nse
 	memcpy ((void*)(ide_devices[ideno].base + secno * SECTSIZE), src, nsecs * SECTSIZE);
 #endif
 
-out:
 	unlock_device (ideno);
 	return ret;
 }

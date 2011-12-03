@@ -11,6 +11,8 @@
 #include <stat.h>
 #include <dirent.h>
 #include <sysfile.h>
+#include <kio.h>
+#include <error.h>
 
 static uint32_t
 sys_exit(uint32_t arg[]) {
@@ -20,7 +22,7 @@ sys_exit(uint32_t arg[]) {
 
 static uint32_t
 sys_fork(uint32_t arg[]) {
-    struct trapframe *tf = current->tf;
+    struct trapframe *tf = pls_read(current)->tf;
     uintptr_t stack = tf->sp;
     return do_fork(0, stack, tf);
 }
@@ -42,13 +44,19 @@ sys_exec(uint32_t arg[]) {
 
 static uint32_t
 sys_clone(uint32_t arg[]) {
-    struct trapframe *tf = current->tf;
+    struct trapframe *tf = pls_read(current)->tf;
     uint32_t clone_flags = (uint32_t)arg[0];
     uintptr_t stack = (uintptr_t)arg[1];
     if (stack == 0) {
         stack = tf->sp;
     }
     return do_fork(clone_flags, stack, tf);
+}
+
+static uint32_t
+sys_exit_thread(uint32_t arg[]) {
+    int error_code = (int)arg[0];
+    return do_exit_thread(error_code);
 }
 
 static uint32_t
@@ -65,7 +73,7 @@ sys_sleep(uint32_t arg[]) {
 static uint32_t
 sys_kill(uint32_t arg[]) {
     int pid = (int)arg[0];
-    return do_kill(pid);
+    return do_kill(pid, -E_KILLED);
 }
 
 static uint32_t
@@ -75,7 +83,7 @@ sys_gettime(uint32_t arg[]) {
 
 static uint32_t
 sys_getpid(uint32_t arg[]) {
-    return current->pid;
+    return pls_read(current)->pid;
 }
 
 static uint32_t
@@ -110,13 +118,13 @@ sys_shmem(uint32_t arg[]) {
 static uint32_t
 sys_putc(uint32_t arg[]) {
     int c = (int)arg[0];
-    cputchar(c);
+    kcons_putc(c);
     return 0;
 }
 
 static uint32_t
 sys_pgdir(uint32_t arg[]) {
-    print_pgdir();
+    print_pgdir(kprintf);
     return 0;
 }
 
@@ -325,6 +333,7 @@ static uint32_t (*syscalls[])(uint32_t arg[]) = {
     [SYS_wait]              sys_wait,
     [SYS_exec]              sys_exec,
     [SYS_clone]             sys_clone,
+    [SYS_exit_thread]       sys_exit_thread,
     [SYS_yield]             sys_yield,
     [SYS_kill]              sys_kill,
     [SYS_sleep]             sys_sleep,
@@ -371,7 +380,7 @@ static uint32_t (*syscalls[])(uint32_t arg[]) = {
 
 void
 syscall(void) {
-    struct trapframe *tf = current->tf;
+    struct trapframe *tf = pls_read(current)->tf;
     uint32_t arg[5];
     int num = tf->regs.gprs[1];
     if (num >= 0 && num < NUM_SYSCALLS) {
@@ -387,6 +396,6 @@ syscall(void) {
     }
     print_trapframe(tf);
     panic("undefined syscall %d, pid = %d, name = %s.\n",
-            num, current->pid, current->name);
+            num, pls_read(current)->pid, pls_read(current)->name);
 }
 

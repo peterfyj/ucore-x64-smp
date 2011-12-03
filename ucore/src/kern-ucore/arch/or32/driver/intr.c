@@ -1,5 +1,5 @@
 #include <intr.h>
-#include <or32.h>
+#include <arch.h>
 
 /* intr_enable - enable irq interrupt */
 void
