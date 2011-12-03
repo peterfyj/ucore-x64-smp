@@ -7,15 +7,12 @@ export TARGET_CC_FLAGS_SV		?=
 export TARGET_CC_FLAGS_USER		?=
 export TARGET_LD_FLAGS			?= -nostdlib
 
-BOOTLOADER	:= ${T_OBJ}/bootloader
-KERNEL		:= ${T_OBJ}/kernel
-SWAPIMG		:= ${T_OBJ}/swap.img
-FSIMG		:= ${T_OBJ}/sfs.img
-MEM 		:= 128M
-BOOT_OPTS	:= --kernel=$(KERNEL) --swap=$(SWAPIMG) --memsize=$(MEM) --disk=$(FSIMG)
+TERMINAL	?= gnome-terminal
+SIMULATOR	?= or32-elf-sim
+RAMIMG		:= ${T_OBJ}/ram.img
 
 run: all
-	${V}${BOOTLOADER} $(BOOT_OPTS)
+	${V}${TERMINAL} -e "${SIMULATOR} -f misc/or32-sim.cfg ${RAMIMG}"
 
 debug: all
-	${V}/usr/bin/gdb -q -x gdbinit.${ARCH}
+	${V}${TERMINAL} -e "rlwrap ${SIMULATOR} -f misc/or32-sim.cfg ${RAMIMG} -i"
