@@ -22,11 +22,11 @@ mod-%:
 
 ${SWAPIMG}:
 	@echo MAKE $@
-	${V}dd if=/dev/zero of=$@ bs=1M count=6
+	${V}dd if=/dev/zero of=$@ bs=1M count=4
 
 ${FSIMG}: ${T_OBJ}/user-sfs-timestamp
 	@echo MAKE $@
-	${V}dd if=/dev/zero of=$@ bs=1M count=10
+	${V}dd if=/dev/zero of=$@ bs=1M count=4
 	${V}${T_OBJ}/tools-mksfs $@ ${T_OBJ}/user-sfs
 
 ${RAMIMG}: ${T_OBJ}/kernel ${FSIMG} ${T_OBJ}/tools-mkram

@@ -437,7 +437,7 @@ check_rb_tree(void) {
     rb_node *nil = tree->nil, *root = tree->root;
     assert(!nil->red && root->left == nil);
 
-    int total = 1000;
+    int total = 100;
     struct check_data **all = check_safe_kmalloc(sizeof(struct check_data *) * total);
 
     long i;

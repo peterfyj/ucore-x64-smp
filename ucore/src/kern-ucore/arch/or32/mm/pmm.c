@@ -165,7 +165,7 @@ pmm_init(void) {
 	page_init ();
 	
 #ifndef NOCHECK
-    check_alloc_page();
+    //check_alloc_page();
 #endif
 
 	boot_pgdir = boot_alloc_page ();
@@ -174,7 +174,7 @@ pmm_init(void) {
 	current_pgdir_pa = boot_pgdir_pa;
 
 #ifndef NOCHECK
-	check_pgdir ();
+	//check_pgdir ();
 #endif
 
 	static_assert(KERNBASE % PTSIZE == 0 && KERNTOP % PTSIZE == 0);
@@ -184,7 +184,7 @@ pmm_init(void) {
 
 	enable_paging ();
 #ifndef NOCHECK
-	check_boot_pgdir ();
+	//check_boot_pgdir ();
 #endif
 	
     print_pgdir (kprintf);
@@ -297,7 +297,7 @@ get_pgtable_items(size_t left, size_t right, size_t start, uintptr_t *table, siz
 //print_pgdir - print the PDT&PT
 void
 print_pgdir(int (*printf)(const char *fmt, ...)) {
-    printf("-------------------- BEGIN --------------------\n");
+    printf("--------------------- BEGIN ---------------------\n");
     size_t left, right = 0, perm;
     while ((perm = get_pgtable_items(0, NPDEENTRY, right, vpd, &left, &right)) != 0) {
         printf("PDE(%03x) %08x-%08x %08x %s\n", right - left,
@@ -308,6 +308,6 @@ print_pgdir(int (*printf)(const char *fmt, ...)) {
                     l * PGSIZE, r * PGSIZE, (r - l) * PGSIZE, perm2str(perm));
         }
     }
-    printf("--------------------- END ---------------------\n");
+    printf("---------------------- END ----------------------\n");
 }
 

@@ -1,6 +1,6 @@
 export HOST_CC_PREFIX	?=
 export TARGET_CC_PREFIX	?= or32-elf-
-export TARGET_CC_FLAGS_COMMON	?= -fno-builtin -nostdinc -fno-stack-protector -mhard-mul
+export TARGET_CC_FLAGS_COMMON	?= -fno-builtin -nostdinc -fno-stack-protector -mhard-mul -D__BIG_ENDIAN__
 export TARGET_CC_FLAGS_BL		?=
 export TARGET_CC_FLAGS_KERNEL	?=
 export TARGET_CC_FLAGS_SV		?=

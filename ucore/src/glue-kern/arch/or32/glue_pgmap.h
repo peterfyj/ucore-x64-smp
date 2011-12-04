@@ -6,7 +6,7 @@ typedef pte_t pte_perm_t;
 static inline void
 ptep_map (pte_t *ptep, uintptr_t pa) 
 {
-	*ptep = pa | PTE_P | PTE_SPR_R;
+	*ptep = pa | PTE_P | PTE_SPR_R | PTE_E;
 }
 
 static inline void
@@ -71,7 +71,7 @@ ptep_set_s_read (pte_t *ptep)
 static inline void
 ptep_set_s_write (pte_t *ptep) 
 {
-	*ptep |= PTE_SPR_W;
+	*ptep |= PTE_SPR_W | PTE_SPR_R;
 }
 static inline void
 ptep_set_s_exec (pte_t *ptep) 
@@ -86,7 +86,7 @@ ptep_set_u_read (pte_t *ptep)
 static inline void
 ptep_set_u_write (pte_t *ptep) 
 {
-	*ptep |= (PTE_USER_W | PTE_SPR_W);
+	*ptep |= (PTE_USER_R | PTE_USER_W | PTE_SPR_R | PTE_SPR_W);
 }
 static inline void
 ptep_set_u_exec (pte_t *ptep) 

@@ -7,6 +7,7 @@
 #include <trap.h>
 #include <clock.h>
 #include <intr.h>
+#include <mp.h>
 #include <pmm.h>
 #include <vmm.h>
 #include <ide.h>
@@ -28,6 +29,9 @@ kern_init(void) {
 
     const char *message = "(THU.CST) os is loading ...";
     kprintf ("%s\n\n", message);
+
+	/* Only to initialize lcpu_count. */
+	mp_init ();
 
 	pmm_init();                 // init physical memory management
 	pmm_init_ap ();

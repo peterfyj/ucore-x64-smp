@@ -51,7 +51,6 @@ boot_map_segment(pde_t *pgdir, uintptr_t la, size_t size, uintptr_t pa, uint32_t
     for (; n > 0; n --, la += PGSIZE, pa += PGSIZE) {
         pte_t *ptep = get_pte(pgdir, la, 1);
         assert(ptep != NULL);
-        //*ptep = pa | PTE_P | perm;
 		ptep_map (ptep, pa);
 		ptep_set_perm (ptep, perm);
     }
@@ -92,6 +91,8 @@ try_again:
 	if (page == NULL && try_free_pages(n)) {
         goto try_again;
     }
+
+	pls_write(used_pages, pls_read(used_pages) + n);
 	return page;
 }
 
@@ -123,6 +124,7 @@ free_pages(struct Page *base, size_t n) {
 		pmm_manager->free_pages(base, n);
 	}
 	local_intr_restore(intr_flag);
+	pls_write(used_pages, pls_read(used_pages) - n);
 }
 
 /**

@@ -163,7 +163,7 @@ swap_init(void) {
     swap_list_init(&active_list);
     swap_list_init(&inactive_list);
 
-    if (!(1024 <= max_swap_offset && max_swap_offset < MAX_SWAP_OFFSET_LIMIT)) {
+    if (!(512 <= max_swap_offset && max_swap_offset < MAX_SWAP_OFFSET_LIMIT)) {
         panic("bad max_swap_offset %08x.\n", max_swap_offset);
     }
 
@@ -182,9 +182,9 @@ swap_init(void) {
 
     sem_init(&swap_in_sem, 1);
 
-    check_swap();
-    check_mm_swap();
-    check_mm_shm_swap();
+    //check_swap();
+    //check_mm_swap();
+    //check_mm_shm_swap();
 
     wait_queue_init(&kswapd_done);
     swap_init_ok = 1;

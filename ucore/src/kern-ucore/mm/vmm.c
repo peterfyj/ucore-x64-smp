@@ -718,8 +718,8 @@ do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr) {
     addr = ROUNDDOWN(addr, PGSIZE);
 
     ret = -E_NO_MEM;
-    pte_t *ptep;
 
+    pte_t *ptep;
     if ((ptep = get_pte(mm->pgdir, addr, 1)) == NULL) {
         goto failed;
     }
@@ -772,7 +772,7 @@ do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr) {
                 goto failed;
             }
             if (!(error_code & 2) && cow) {
-                ptep_unset_u_write(&perm);
+                ptep_unset_s_write(&perm);
                 may_copy = 0;
             }
         }

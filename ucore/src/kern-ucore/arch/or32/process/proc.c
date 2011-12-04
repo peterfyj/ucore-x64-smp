@@ -90,6 +90,8 @@ copy_thread(uint32_t clone_flags, struct proc_struct *proc,
 	return 0;
 }
 
+#include <kio.h>
+
 int
 init_new_context (struct proc_struct *proc, struct elfhdr *elf, int argc, char** kargv) 
 {

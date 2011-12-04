@@ -59,6 +59,7 @@ int copy_range(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end, bool shar
 void tlb_update (pde_t *pgdir, uintptr_t la);
 void tlb_invalidate(pde_t *pgdir, uintptr_t la);
 void tlb_invalidate_user (void);
+void tlb_invalidate_all (void);
 
 void load_rsp0 (uintptr_t esp0);
 void set_pgdir (struct proc_struct *proc, pde_t *pgdir);
@@ -95,7 +96,7 @@ void exit_range(pde_t *pgdir, uintptr_t start, uintptr_t end);
             (void *) (__m_pa + KERNBASE);                               \
         })
 
-#define NEXT_PAGE(pg) (pg + PGSIZE)
+#define NEXT_PAGE(pg) (pg + 1)
 
 extern struct Page *pages;
 extern size_t npage;

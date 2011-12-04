@@ -24,13 +24,12 @@
 #ifdef BOARD
 #define RAM_SIZE                 0x4000000           // 64M bytes
 #else
-#define RAM_SIZE                 0x200000            // 2M bytes
-#endif
-
-#define DISK_FS_BASE             0x800000
+#define RAM_SIZE                 0x800000            // 8M bytes
+#define DISK_FS_BASE             RAM_SIZE
 #define DISK_FS_SIZE             0x400000
-#define SWAP_FS_BASE             0xc00000
+#define SWAP_FS_BASE             (DISK_FS_BASE + DISK_FS_SIZE)
 #define SWAP_FS_SIZE             0x400000
+#endif
 
 #define GPIO_PHYSICAL_BASE       0x20000000
 #define SPI_PHYSICAL_BASE        0x70000000
