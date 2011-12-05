@@ -378,6 +378,7 @@ copy_range(pgd_t *to, pgd_t *from, uintptr_t start, uintptr_t end, bool share) {
 					ptep_unset_s_write(&perm);
 					pte_perm_t perm_with_swap_stat = ptep_get_perm(ptep, PTE_SWAP);
 					ptep_set_perm(&perm_with_swap_stat, perm);
+					ptep_unset_s_write(&perm_with_swap_stat);
                     page_insert(from, page, start, perm_with_swap_stat);
                 }
                 ret = page_insert(to, page, start, perm);
