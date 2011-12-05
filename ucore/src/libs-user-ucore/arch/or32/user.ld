@@ -21,7 +21,7 @@ SECTIONS {
     . = ALIGN(0x2000);
 
     .data : {
-        *(.data)
+        *(.data .data.* .gnu.linkonce.d.*)
     }
 
     PROVIDE(edata = .);

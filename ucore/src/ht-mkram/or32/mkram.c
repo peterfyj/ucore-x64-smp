@@ -8,9 +8,9 @@
 #include "e820.h"
 
 #define ELF_MAGIC 0x464c457f
-#define MEMORY    0x800000   // 4M
+#define MEMORY    0x400000   // 4M
 #define FS_BASE   MEMORY
-#define FS_SIZE   0x400000   // 8M
+#define FS_SIZE   0x800000   // 8M
 
 #define BUFFER_SIZE 2048
 char buffer[BUFFER_SIZE];
