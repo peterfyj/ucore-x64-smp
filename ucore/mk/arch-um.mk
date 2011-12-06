@@ -12,6 +12,8 @@ FSIMG		:= ${T_OBJ}/sfs.img
 
 all: ${MODDIRS} ${SWAPIMG} ${FSIMG}
 
+mod-user-ucore: mod-ht-mksfs mod-libs-user-ucore
+
 mod-%:
 	@echo MAKE $* {
 	${V}MOD="$*" ${MAKE} -C src/$* all

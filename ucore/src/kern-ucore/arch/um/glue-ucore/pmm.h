@@ -95,7 +95,7 @@ void print_pgdir(int (*printf)(const char *fmt, ...));
 #define VADDR_DIRECT(addr) ((void*)((uintptr_t)(addr) + KERNBASE))
 #define PADDR_DIRECT(addr) ((uintptr_t)(addr) - KERNBASE)
 
-#define NEXT_PAGE(pg) (pg + PGSIZE)
+#define NEXT_PAGE(pg) (pg + 1)
 
 extern struct Page *pages;
 extern size_t npage;

@@ -9,7 +9,9 @@
 #define SEG_KPLS         3
 #define SEG_UTEXT        4
 #define SEG_UDATA        5
-#define SEG_TSS(apic_id) 6 + (apic_id)
+#define SEG_TLS1         6
+#define SEG_TLS2	     7
+#define SEG_TSS(apic_id) 8 + (apic_id)
 
 /* global descrptor numbers */
 #define GD_KTEXT    ((SEG_KTEXT) << 4)      // kernel text
@@ -17,6 +19,8 @@
 #define GD_KPLS     ((SEG_KPLS)  << 4)      // kernel pls
 #define GD_UTEXT    ((SEG_UTEXT) << 4)      // user text
 #define GD_UDATA    ((SEG_UDATA) << 4)      // user data
+#define GD_TLS1     ((SEG_TLS1) << 4)
+#define GD_TLS2     ((SEG_TLS2) << 4)
 #define GD_TSS(apic_id) ((SEG_TSS(apic_id)) << 4)        // task segment selector
 
 #define DPL_KERNEL  (0)

@@ -3,7 +3,11 @@
 
 #include <types.h>
 
+#ifdef __BIG_ENDIAN__
+#define ELF_MAGIC   0x7F454C46U         // "\x7FELF" in big endian
+#else
 #define ELF_MAGIC   0x464C457FU         // "\x7FELF" in little endian
+#endif
 
 #ifdef __UCORE_64__
 

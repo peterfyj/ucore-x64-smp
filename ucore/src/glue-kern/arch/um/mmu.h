@@ -31,15 +31,15 @@
 
 #define PTXSHIFT		12						// offset of PTX in a linear address
 #define PDXSHIFT		22						// offset of PDX in a linear address
-#define PMXSHIFT		22
-#define PUXSHIFT		22
-#define PGXSHIFT		22
+#define PMXSHIFT		PDXSHIFT
+#define PUXSHIFT		PDXSHIFT
+#define PGXSHIFT		PDXSHIFT
 
 // page directory index
 #define PDX(la) ((((uintptr_t)(la)) >> PDXSHIFT) & 0x3FF)
-#define PGX(la) ((((uintptr_t)(la)) >> PDXSHIFT) & 0x3FF)
-#define PUX(la) ((((uintptr_t)(la)) >> PDXSHIFT) & 0x3FF)
-#define PMX(la) ((((uintptr_t)(la)) >> PDXSHIFT) & 0x3FF)
+#define PGX(la) PDX(la)
+#define PUX(la) PDX(la)
+#define PMX(la) PDX(la)
 
 // page table index
 #define PTX(la) ((((uintptr_t)(la)) >> PTXSHIFT) & 0x3FF)

@@ -321,7 +321,7 @@ good_mm:
     }
     mm_count_inc(mm);
     proc->mm = mm;
-    proc->cr3 = PADDR(mm->pgdir);
+	set_pgdir (proc, mm->pgdir);
     return 0;
 bad_dup_cleanup_mmap:
     exit_mmap(mm);
@@ -661,9 +661,6 @@ load_icode(int fd, int argc, char **kargv) {
             ret = -E_INVAL_ELF;
 			goto bad_cleanup_mmap;
         }
-        if (ph->p_filesz == 0) {
-            continue ;
-        }
         vm_flags = 0;
 		ptep_set_u_read(&perm);
         if (ph->p_flags & ELF_PF_X) vm_flags |= VM_EXEC;
@@ -745,7 +742,7 @@ load_icode(int fd, int argc, char **kargv) {
     local_intr_restore(intr_flag);
     mm_count_inc(mm);
     current->mm = mm;
-    current->cr3 = PADDR(mm->pgdir);
+	set_pgdir(current, mm->pgdir);
 	mm->lapic = pls_read(lapic_id);
     mp_set_mm_pagetable(mm);
 

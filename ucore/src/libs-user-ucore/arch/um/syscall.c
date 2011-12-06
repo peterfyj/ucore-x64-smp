@@ -1,3 +1,4 @@
+#include <syscall.h>
 #include <types.h>
 #include <stdarg.h>
 #include <unistd.h>

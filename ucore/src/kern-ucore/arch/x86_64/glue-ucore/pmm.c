@@ -10,7 +10,7 @@
 #include <glue_intr.h>
 #include <mp.h>
 
-#define SV_GDT_SIZE (6 + LAPIC_COUNT)
+#define SV_GDT_SIZE (8 + LAPIC_COUNT)
 
 /* *
  * Global Descriptor Table:
