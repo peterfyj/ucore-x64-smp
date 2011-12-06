@@ -660,9 +660,6 @@ load_icode(int fd, int argc, char **kargv) {
             ret = -E_INVAL_ELF;
             goto bad_cleanup_mmap;
         }
-        if (ph->p_filesz == 0) {
-            continue ;
-        }
         vm_flags = 0;
 		ptep_set_u_read(&perm);
         if (ph->p_flags & ELF_PF_X) vm_flags |= VM_EXEC;

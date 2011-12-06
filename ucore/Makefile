@@ -7,7 +7,7 @@ export T_BASE   		?= ${PWD}
 export T_OBJ    		?= ${PWD}/obj
 export MAKE     		:= make -s
 
-SUPPORTED_ARCH := x86_64 um or32
+SUPPORTED_ARCH := i386 x86_64 um or32
 ifneq (,$(findstring $(ARCH),$(SUPPORTED_ARCH)))
 include mk/config-${ARCH}.mk
 endif
