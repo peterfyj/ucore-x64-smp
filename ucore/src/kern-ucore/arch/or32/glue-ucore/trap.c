@@ -315,9 +315,7 @@ trap (struct trapframe *tf, uintptr_t address, uint32_t vector, uint32_t write_a
 		
 		pls_read(current)->tf = otf;
 		if (!in_kernel) {
-			if (pls_read(current)->flags & PF_EXITING) {
-				do_exit (-E_KILLED);
-			}
+			may_killed();
 			if (pls_read(current)->need_resched) {
 				schedule ();
 			}

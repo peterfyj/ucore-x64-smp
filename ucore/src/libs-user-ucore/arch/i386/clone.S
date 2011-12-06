@@ -37,8 +37,8 @@ __clone:                        # __clone(clone_flags, stack, fn, arg)
     call *%ebx                  # call fn(arg)
 
     movl %eax, %edx             # save exit_code
-    movl $SYS_exit, %eax        # load SYS_exit
-    int $T_SYSCALL              # int SYS_exit
+    movl $SYS_exit_thread, %eax # load SYS_exit_thread
+    int $T_SYSCALL              # int SYS_exit_thread
 
 spin:                           # error ?
     jmp spin

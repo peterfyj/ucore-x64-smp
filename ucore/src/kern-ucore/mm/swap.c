@@ -182,9 +182,9 @@ swap_init(void) {
 
     sem_init(&swap_in_sem, 1);
 
-    //check_swap();
-    //check_mm_swap();
-    //check_mm_shm_swap();
+    check_swap();
+    check_mm_swap();
+    check_mm_shm_swap();
 
     wait_queue_init(&kswapd_done);
     swap_init_ok = 1;

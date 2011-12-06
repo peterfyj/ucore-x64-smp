@@ -1,4 +1,4 @@
-QEMU            		?= qemu-i386
+QEMU            		?= qemu
 export HOST_CC_PREFIX	?=
 export TARGET_CC_PREFIX	?= 
 export TARGET_CC_FLAGS_COMMON	?=	-m32 -ffreestanding \
