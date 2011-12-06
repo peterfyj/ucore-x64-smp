@@ -44,7 +44,7 @@ shmn_create(uintptr_t start) {
 static inline void
 shmem_remove_entry_pte(pte_t *ptep) {
     assert(ptep != NULL);
-    if (*ptep & PTE_P) {
+    if (ptep_present(ptep)) {
         struct Page *page = pte2page(*ptep);
         if (!PageSwap(page)) {
             if (page_ref_dec(page) == 0) {
@@ -52,16 +52,16 @@ shmem_remove_entry_pte(pte_t *ptep) {
             }
         }
         else {
-            if (*ptep & PTE_D) {
+            if (ptep_dirty(ptep)) {
                 SetPageDirty(page);
             }
             page_ref_dec(page);
         }
-        *ptep = 0;
+        ptep_unmap(ptep);
     }
-    else if (*ptep != 0) {
+    else if (! ptep_invalid(ptep)) {
         swap_remove_entry(*ptep);
-        *ptep = 0;
+		ptep_unmap(ptep);
     }
 }
 
@@ -156,7 +156,7 @@ shmem_get_entry(struct shmem_struct *shmem, uintptr_t addr, bool create) {
         if (create) {
             struct Page *page = alloc_page();
             if (page != NULL) {
-                shmn->entry[index] = (page2pa(page) | PTE_P);
+				ptep_map(&(shmn->entry[index]), page2pa(page));
                 page_ref_inc(page);
             }
         }
@@ -170,16 +170,16 @@ shmem_insert_entry(struct shmem_struct *shmem, uintptr_t addr, pte_t entry) {
     if (ptep == NULL) {
         return -E_NO_MEM;
     }
-    if (*ptep != 0) {
+    if (! ptep_invalid(ptep)) {
         shmem_remove_entry_pte(ptep);
     }
-    if (entry & PTE_P) {
+    if (ptep_present(&entry)) {
         page_ref_inc(pte2page(entry));
     }
-    else if (entry != 0) {
+    else if (! ptep_invalid(&entry)) {
         swap_duplicate(entry);
     }
-    *ptep = entry;
+	ptep_copy(ptep, &entry);
     return 0;
 }
 

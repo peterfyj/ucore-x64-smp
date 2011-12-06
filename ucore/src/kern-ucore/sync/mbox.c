@@ -229,7 +229,7 @@ load_msg(const void *src, size_t len) {
         *segp = seg, segp = &(seg->next);
         dst = seg + 1;
     inside:
-        memcpy(dst, src, alen);
+		copy_from_user (current->mm, dst, src, alen, 0);
         len -= alen, src = ((char *)src) + alen;
         *segp = NULL;
     }
@@ -348,7 +348,7 @@ store_msg(struct msg_msg *msg, void *dst) {
         assert(seg != NULL);
         src = seg + 1, seg = seg->next;
     inside:
-        memcpy(dst, src, alen);
+		copy_to_user (current->mm, dst, src, alen);
         len -= alen, dst = ((char *)dst) + alen;
     }
 }
