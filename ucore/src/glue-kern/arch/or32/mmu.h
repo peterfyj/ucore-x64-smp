@@ -35,7 +35,7 @@
 #define PTE_E           0x400
 #define PTE_S           0x800
 
-#define PTE_USER        (PTE_USER_R | PTE_USER_W | PTE_E)  // mask of user access authority
+#define PTE_USER        (PTE_USER_R | PTE_USER_W | PTE_E | PTE_SPR_R | PTE_SPR_W | PTE_P)
 #define PTE_PERM        (PTE_USER_R | PTE_USER_W | PTE_SPR_R | PTE_SPR_W | PTE_E)
 #define PTE_SWAP        (PTE_A | PTE_D)
 
