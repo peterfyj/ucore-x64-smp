@@ -28,6 +28,8 @@
 #define KERNEL_DS   ((GD_KDATA) | DPL_KERNEL)
 #define USER_CS     ((GD_UTEXT) | DPL_USER)
 #define USER_DS     ((GD_UDATA) | DPL_USER)
+#define USER_TLS1	((GD_TLS1)  | DPL_USER)
+#define USER_TLS2	((GD_TLS2)  | DPL_USER)
 
 /* All physical memory mapped at this address */
 #define SVBASE           0xFFFF800000000000

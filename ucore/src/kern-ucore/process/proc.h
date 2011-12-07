@@ -10,6 +10,7 @@
 #include <event.h>
 #include <glue_mp.h>
 #include <elf.h>
+#include <mmu.h>
 #include <arch_proc.h>
 
 // process's state in his life cycle
@@ -25,6 +26,9 @@ enum proc_state {
 #define PROC_NAME_LEN               15
 #define MAX_PROCESS                 4096
 #define MAX_PID                     (MAX_PROCESS * 2)
+
+#define SET_FS	1
+#define SET_GS	2
 
 extern list_entry_t proc_list;
 extern list_entry_t proc_mm_list;
@@ -60,6 +64,9 @@ struct proc_struct {
     sem_queue_t *sem_queue;                     // the user semaphore queue which process waits
     event_t event_box;                          // the event which process waits   
     struct fs_struct *fs_struct;                // the file related info(pwd, files_count, files_array, fs_semaphore) of process
+	
+	struct segdesc fs;
+	struct segdesc gs;
 };
 
 #define PF_EXITING                  0x00000001      // getting shutdown
@@ -111,6 +118,7 @@ int do_sleep(unsigned int time);
 int do_mmap(uintptr_t *addr_store, size_t len, uint32_t mmap_flags);
 int do_munmap(uintptr_t addr, size_t len);
 int do_shmem(uintptr_t *addr_store, size_t len, uint32_t mmap_flags);
+int do_prctl(int code, uintptr_t addr);
 
 /* Implemented by archs */
 struct proc_struct * alloc_proc(void);

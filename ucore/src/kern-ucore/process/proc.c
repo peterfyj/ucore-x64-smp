@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <mp.h>
 
+
 /* ------------- process/thread mechanism design&implementation -------------
 (an simplified Linux process/thread mechanism )
 introduction:
@@ -171,6 +172,19 @@ get_pid(void) {
     return last_pid;
 }
 
+/**
+ * Restore the content of fs & gs from the proc_struct,
+ * and set fs & gs properly;
+ */
+void
+set_tls(struct proc_struct *proc) {
+	struct segdesc* p = pls_get_ptr(gdt);
+	p[SEG_TLS1] = proc->fs;
+	p[SEG_TLS2] = proc->gs;
+	asm volatile ("movw %%ax, %%fs;" :: "a" (USER_TLS1));
+	asm volatile ("movw %%ax, %%gs;" :: "a" (USER_TLS2));
+}
+
 // proc_run - make process "proc" running on cpu
 // NOTE: before call switch_to, should load  base addr of "proc"'s new PDT
 void
@@ -184,6 +198,7 @@ proc_run(struct proc_struct *proc) {
             pls_write(current, proc);
             load_rsp0(next->kstack + KSTACKSIZE);
             mp_set_mm_pagetable(next->mm);
+			set_tls(proc);
             switch_to(&(prev->context), &(next->context));
         }
         local_intr_restore(intr_flag);
@@ -795,6 +810,41 @@ failed_nomem:
 failed_cleanup:
     put_kargv(i, kargv);
     return ret;
+}
+
+/**
+ * Set fs/gs base;
+ * @code: SET_FS/SET_GS;
+ * @addr: The 64-bit base to be set;
+ */
+int
+do_prctl(int code, uintptr_t addr) {
+	struct segdesc* pseg;
+	switch (code) {
+		case SET_FS:
+			pseg = &current->fs;
+			break;
+		case SET_GS:
+			pseg = &current->gs;
+			break;
+		default:
+			return -E_INVAL;
+	}
+	pseg->sd_base_15_0 = addr & 0xffff;
+	pseg->sd_base_23_16 = (addr >> 16) & 0xff;
+	pseg->sd_base_31_24 = (addr >> 24) & 0xff;
+	pseg->sd_base_63_32 = (addr >> 32) & 0xffffffff;
+	struct segdesc* pseg_cur = pls_get_ptr(gdt);
+	switch (code) {
+		case SET_FS:
+			pseg_cur[SEG_TLS1] = *pseg;
+			break;
+		case SET_GS:
+			pseg_cur[SEG_TLS2] = *pseg;
+			break;
+	}
+	set_tls(current);
+	return 0;
 }
 
 int

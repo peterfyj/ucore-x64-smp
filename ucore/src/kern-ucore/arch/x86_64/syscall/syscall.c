@@ -330,6 +330,14 @@ sys_mkfifo(uint64_t arg[]) {
     return sysfile_mkfifo(name, open_flags);
 }
 
+static uint64_t
+sys_prctl(uint64_t arg[]) {	
+	int code = (int)arg[0];
+	uint64_t ptr = arg[1];
+	kprintf("sys_prctl: code = 0x%08x, ptr = 0x%016x\n", code, ptr);
+	return do_prctl(code, ptr);
+}
+
 static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -377,6 +385,7 @@ static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_dup]               sys_dup,
     [SYS_pipe]              sys_pipe,
     [SYS_mkfifo]            sys_mkfifo,
+	[SYS_prctl]				sys_prctl,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

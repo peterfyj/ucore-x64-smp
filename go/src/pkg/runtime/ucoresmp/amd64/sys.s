@@ -245,8 +245,8 @@ TEXT runtime·settls(SB),7,$32
 	ADDQ	$16, DI	// ELF wants to use -16(FS), -8(FS)
 
 	MOVQ	DI, SI
-	MOVQ	$0x1002, DI	// ARCH_SET_FS
-	MOVQ	$158, AX	// arch_prctl
+	MOVQ	$0x1, DI	// SET_FS
+	MOVQ	$150, AX	// sys_prctl
 	INT $0x80
 	CMPQ	AX, $0xfffffffffffff001
 	JLS	2(PC)

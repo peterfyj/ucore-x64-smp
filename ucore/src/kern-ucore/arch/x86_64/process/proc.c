@@ -35,6 +35,8 @@ alloc_proc(void) {
         proc->sem_queue = NULL;
         event_box_init(&(proc->event_box));
         proc->fs_struct = NULL;
+		proc->fs = SEG(STA_W, DPL_USER);
+		proc->gs = SEG(STA_W, DPL_USER);
     }
     return proc;
 }
