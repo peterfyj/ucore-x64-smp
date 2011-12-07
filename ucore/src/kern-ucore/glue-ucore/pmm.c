@@ -33,6 +33,8 @@ get_pud(pgd_t *pgdir, uintptr_t la, bool create) {
         memset(KADDR(pa), 0, PGSIZE);
         ptep_map(pgdp, pa);
         ptep_set_u_write(pgdp);
+		ptep_set_accessed(pgdp);
+		ptep_set_dirty(pgdp);
     }
     return &((pud_t *)KADDR(PGD_ADDR(*pgdp)))[PUX(la)];
 #endif /* PUXSHIFT == PGXSHIFT */
@@ -57,6 +59,8 @@ get_pmd(pgd_t *pgdir, uintptr_t la, bool create) {
         memset(KADDR(pa), 0, PGSIZE);
 		ptep_map(pudp, pa);
 		ptep_set_u_write(pudp);
+		ptep_set_accessed(pudp);
+		ptep_set_dirty(pudp);
     }
     return &((pmd_t *)KADDR(PUD_ADDR(*pudp)))[PMX(la)];
 #endif /* PMXSHIFT == PUXSHIFT */
@@ -81,6 +85,8 @@ get_pte(pgd_t *pgdir, uintptr_t la, bool create) {
         memset(KADDR(pa), 0, PGSIZE);
 		ptep_map(pmdp, pa);
 		ptep_set_u_write(pmdp);
+		ptep_set_accessed(pmdp);
+		ptep_set_dirty(pmdp);
     }
     return &((pte_t *)KADDR(PMD_ADDR(*pmdp)))[PTX(la)];
 #endif /* PTXSHIFT == PMXSHIFT */

@@ -57,12 +57,14 @@ pgd_t * const vgd = (pgd_t *)PGADDR(PGX(VPT), PGX(VPT), PGX(VPT), PGX(VPT), 0);
  *   - 0x50:  user data segment
  *   - 0x60:  defined for tss, initialized in gdt_init
  * */
-static struct segdesc gdt[6 + LAPIC_COUNT] = {
+static struct segdesc gdt[8 + LAPIC_COUNT] = {
     SEG_NULL,
     [SEG_KTEXT] = SEG(STA_X | STA_R, DPL_KERNEL),
     [SEG_KDATA] = SEG(STA_W, DPL_KERNEL),
     [SEG_UTEXT] = SEG(STA_X | STA_R, DPL_USER),
     [SEG_UDATA] = SEG(STA_W, DPL_USER),
+	[SEG_TLS1]  = SEG(STA_W, DPL_USER),
+	[SEG_TLS2]  = SEG(STA_W, DPL_USER),
 };
 
 struct pseudodesc gdt_pd = {
