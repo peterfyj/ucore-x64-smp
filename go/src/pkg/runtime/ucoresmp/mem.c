@@ -33,7 +33,7 @@ runtime·SysAlloc(uintptr n)
 	void *p;
 	p = nil;
 	mstats.sys += n;
-	runtime·mmap((void*)&p, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0);
+	runtime·mmap((void*)&p, n, MMAP_WRITE, 0, 0, 0);
 	runtime·memclr(p, n);
 	return p;
 }
@@ -64,8 +64,10 @@ runtime·SysReserve(void *v, uintptr n)
 	
 	void *p = v;
 
-	runtime·mmap((void*)&p, n, PROT_NONE, MAP_ANON|MAP_PRIVATE, -1, 0);
-
+	runtime·mmap((void*)&p, n, MMAP_WRITE, 0, 0, 0);
+	if(p < (void*)4096) {
+		return nil;
+	}
 	return p;
 }
 
@@ -78,27 +80,11 @@ runtime·SysMap(void *v, uintptr n)
 
 	// On 64-bit, we don't actually have v reserved, so tread carefully.
 	if(sizeof(void*) == 8) {
-		runtime·mmap((void*)&p, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0);
-		if(p != v && addrspace_free(v, n)) {
-			// On some systems, mmap ignores v without
-			// MAP_FIXED, so retry if the address space is free.
-			if(p > (void*)4096) {
-				runtime·munmap(p, n);
-			}
-			p = runtime·mmap(v, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_FIXED|MAP_PRIVATE, -1, 0);
-		}
-		if(p == (void*)ENOMEM)
-			runtime·throw("runtime: out of memory");
-		if(p != v) {
-			runtime·printf("runtime: address space conflict: map(%p) = %p\n", v, p);
-			runtime·throw("runtime: address space conflict");
-		}
+		runtime·mmap((void*)&p, n, MMAP_WRITE, 0, 0, 0);
+		runtime·memclr(p, n);
 		return;
 	}
 
-	runtime·mmap((void*)&p, n, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_FIXED|MAP_PRIVATE, -1, 0);
-	if(p == (void*)ENOMEM)
-		runtime·throw("runtime: out of memory");
-	if(p != v)
-		runtime·throw("runtime: cannot map pages in arena address space");
+	runtime·mmap((void*)&p, n, MMAP_WRITE, 0, 0, 0);
+	runtime·memclr(p, n);
 }

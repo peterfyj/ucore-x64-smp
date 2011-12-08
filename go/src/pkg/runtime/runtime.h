@@ -415,6 +415,7 @@ void	runtime·lessstack(void);
 void	runtime·goargs(void);
 void	runtime·goenvs(void);
 void	runtime·goenvs_unix(void);
+void	runtime·goenvs_ucoresmp(void);
 void*	runtime·getu(void);
 void	runtime·throw(int8*);
 void	runtime·panicstring(int8*);

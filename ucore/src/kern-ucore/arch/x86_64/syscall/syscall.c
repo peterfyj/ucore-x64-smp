@@ -100,7 +100,7 @@ sys_mmap(uint64_t arg[]) {
     uintptr_t *addr_store = (uintptr_t *)arg[0];
     size_t len = (size_t)arg[1];
     uint32_t mmap_flags = (uint32_t)arg[2];
-    return do_mmap(addr_store, len, mmap_flags);
+	return do_mmap(addr_store, len, mmap_flags);
 }
 
 static uint64_t
@@ -238,7 +238,8 @@ sys_read(uint64_t arg[]) {
 static uint64_t
 sys_write(uint64_t arg[]) {
     int fd = (int)arg[0];
-    void *base = (void *)arg[1];
+	if (fd == 2) fd = 1;		// Temp patch for stderr;
+	void *base = (void *)arg[1];
     size_t len = (size_t)arg[2];
     return sysfile_write(fd, base, len);
 }
@@ -334,7 +335,6 @@ static uint64_t
 sys_prctl(uint64_t arg[]) {	
 	int code = (int)arg[0];
 	uint64_t ptr = arg[1];
-	kprintf("sys_prctl: code = 0x%08x, ptr = 0x%016x\n", code, ptr);
 	return do_prctl(code, ptr);
 }
 
@@ -395,6 +395,11 @@ syscall(void) {
     struct trapframe *tf = current->tf;
     uint64_t arg[6];
     int num = tf->tf_regs.reg_rax;
+	/*
+	if (num != SYS_read && num != SYS_write) {
+		kprintf("syscall [%d] detected!\n", num);
+	}
+	*/
     if (num >= 0 && num < NUM_SYSCALLS) {
         if (syscalls[num] != NULL) {
             arg[0] = tf->tf_regs.reg_rdi;

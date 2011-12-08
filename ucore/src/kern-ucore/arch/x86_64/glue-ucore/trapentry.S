@@ -3,11 +3,15 @@
 __trapret:
     # restore registers from stack
 
-    # pop ds, es
+    # pop ds, es, fs, gs
     popq %rax
     movq %rax, %ds
     popq %rax
     movq %rax, %es
+	popq %rax
+	movq %rax, %fs
+	popq %rax
+	movq %rax, %gs
 
     popq %r15
     popq %r14

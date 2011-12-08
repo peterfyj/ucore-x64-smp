@@ -844,6 +844,8 @@ do_prctl(int code, uintptr_t addr) {
 			break;
 	}
 	set_tls(current);
+	current->tf->tf_fs = USER_TLS1;
+	current->tf->tf_gs = USER_TLS2;
 	return 0;
 }
 

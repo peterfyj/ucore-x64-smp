@@ -10,7 +10,7 @@
 
 TEXT runtime·exit(SB),7,$0-8
 	MOVL	8(SP), DI
-	MOVL	$149, AX	// exitgroup - force all os threads to exit
+	MOVL	$1, AX	// exitgroup - force all os threads to exit
 	INT $0x80
 	RET
 
@@ -35,10 +35,10 @@ TEXT runtime·close(SB),7,$0-16
 	RET
 
 TEXT runtime·write(SB),7,$0-24
-	MOVL	8(SP), DI
+	MOVL	$1, DI //8(SP), DI
 	MOVQ	16(SP), SI
 	MOVL	24(SP), DX
-	MOVL	$1, AX			// syscall entry
+	MOVL	$103, AX			// syscall entry
 	INT $0x80
 	RET
 
@@ -91,12 +91,6 @@ TEXT runtime·gettime(SB), 7, $32
 	RET
 
 TEXT runtime·rt_sigaction(SB),7,$0-32
-	MOVL	8(SP), DI
-	MOVQ	16(SP), SI
-	MOVQ	24(SP), DX
-	MOVQ	32(SP), R10
-	MOVL	$13, AX			// syscall entry
-	INT $0x80
 	RET
 
 TEXT runtime·sigtramp(SB),7,$64
@@ -137,10 +131,6 @@ TEXT runtime·mmap(SB),7,$0
 	MOVQ	$0, SI
 	MOVQ	16(SP), SI
 	MOVL	24(SP), DX
-	MOVL	28(SP), R10
-	MOVL	32(SP), R8
-	MOVL	36(SP), R9
-
 	MOVL	$20, AX			// mmap
 	INT $0x80
 	RET

@@ -22,11 +22,16 @@ __alltraps:
     pushq %r14
     pushq %r15
 
-    # push ds, es
+    # push ds, es, fs, gs
+	movw %gs, %rax
+    pushq %rax
+	movw %fs, %rax
+    pushq %rax
     movw %es, %rax
     pushq %rax
     movw %ds, %rax
     pushq %rax
+
 
     # use %rdi to pass a pointer to the trapframe as an argument to trap()
     movq %rsp, %rdi
@@ -39,11 +44,15 @@ __alltraps:
 __trapret:
     # restore registers from stack
 
-    # pop ds, es
+    # pop ds, es, fs, gs
     popq %rax
     movq %rax, %ds
     popq %rax
     movq %rax, %es
+	popq %rax
+	movq %rax, %fs
+	popq %rax
+	movq %rax, %gs
 
     popq %r15
     popq %r14

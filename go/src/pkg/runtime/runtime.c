@@ -200,6 +200,14 @@ runtime·goargs(void)
 }
 
 void
+runtime·goenvs_ucoresmp(void)
+{
+	os·Envs.array = nil;
+	os·Envs.len = 0;
+	os·Envs.cap = 0;
+}
+
+void
 runtime·goenvs_unix(void)
 {
 	String *s;
