@@ -111,10 +111,11 @@ int module_loaded(const char *name) {
 }
 
 void print_loaded_module() {
+    output("module        size\n");
     int i;
     for (i = 0; i < MX; i++) {
         if (table[i]) {
-            output("%s\n", table[i]);
+            output("%s        %d\n", table[i], modules[i]->image_size);
         }
     }
 }

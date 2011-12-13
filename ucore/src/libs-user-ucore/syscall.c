@@ -236,6 +236,10 @@ int sys_cleanup_module(const char *name) {
     return syscall(SYS_cleanup_module, name);
 }
 
+int sys_list_module() {
+    return syscall(SYS_list_module);
+}
+
 int sys_mod_add(int a, int b) {
     return syscall(SYS_mod_add, a, b);
 }

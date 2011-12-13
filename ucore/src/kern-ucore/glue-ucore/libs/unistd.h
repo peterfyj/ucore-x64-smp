@@ -54,6 +54,7 @@
 #define SYS_mkfifo          141
 #define SYS_init_module     200
 #define SYS_cleanup_module  201
+#define SYS_list_module     202
 #define SYS_mod_add         210
 #define SYS_mod_mul         211
 

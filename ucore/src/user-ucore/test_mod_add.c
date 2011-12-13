@@ -6,7 +6,7 @@
 #include <syscall.h>
 #include <file.h>
 
-#define USAGE "test_mod_add <int1> <int2>"
+#define USAGE "test_mod_add <int1> <int2>\n"
 
 int isdigit(char c) {
     return c >= '0' && c <= '9';

@@ -14,7 +14,7 @@
 #include <sysfile.h>
 #include <kio.h>
 #include <glue_kio.h>
-#include <mod.h>
+#include <mod_manager.h>
 
 #define current (pls_read(current))
 
@@ -344,6 +344,12 @@ sys_cleanup_module(uint64_t arg[]) {
 }
 
 static uint64_t
+sys_list_module(uint64_t arg[]) {
+    print_loaded_module();
+    return 0;
+}
+
+static uint64_t
 sys_mod_add(uint64_t arg[]) {
     int a = (int)arg[0];
     int b = (int)arg[1];
@@ -399,6 +405,7 @@ static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_mkfifo]            sys_mkfifo,
     [SYS_init_module]       sys_init_module,
     [SYS_cleanup_module]    sys_cleanup_module,
+    [SYS_list_module]       sys_list_module,
     [SYS_mod_add]           sys_mod_add,
 };
 

@@ -57,6 +57,7 @@ int sys_pipe(int *fd_store);
 int sys_mkfifo(const char *name, uint32_t open_flags);
 int sys_init_module(const char *name);
 int sys_cleanup_module(const char *name);
+int sys_list_module();
 int sys_mod_add(int, int);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
