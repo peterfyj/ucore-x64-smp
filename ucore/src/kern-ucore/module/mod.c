@@ -66,8 +66,8 @@ int load_mod_file(char *name, uintptr_t *addr, uint32_t *size) {
 }
 
 int load_module(char * name) {
-    struct elf_mod_info_s info;
-    add_module(name, &info);    // must add module before load_mod_file, cuz load_mod_file will modify name
+    struct elf_mod_info_s *info = (struct elf_mod_info_s *)kmalloc(sizeof(struct elf_mod_info_s));
+    add_module(name, info);    // must add module before load_mod_file, cuz load_mod_file will modify name
 
     int ret = 0;
     uintptr_t mod_addr;
@@ -76,9 +76,9 @@ int load_module(char * name) {
         return ret;
     }
 
-    elf_mod_load(mod_addr, mod_size, &info);
+    elf_mod_load(mod_addr, mod_size, info);
 
-    ((voidfunc)info.load_ptr)();
+    ((voidfunc)info->load_ptr)();
     return ret;
 }
 

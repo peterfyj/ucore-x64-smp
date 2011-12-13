@@ -4,6 +4,7 @@
 #include <mod.h>
 #include <unistd.h>
 #include <syscall.h>
+#include <file.h>
 
 #define USAGE "test_mod_add <int1> <int2>"
 

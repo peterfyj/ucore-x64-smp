@@ -12,8 +12,8 @@ static char path[MX_MOD_PATH_LEN];
 // must be the char count sum of the 2 strings above
 #define KERN_MODULE_ADDITIONAL_LEN 16
 
-#define USAGE "insmod <mod-name>\n"
-#define LOADING "loading "
+#define USAGE "rmmod <mod-name>\n"
+#define LOADING "removing module "
 
 int
 main(int argc, char **argv) {
@@ -28,9 +28,9 @@ main(int argc, char **argv) {
         write(1, LOADING, strlen(LOADING));
         write(1, path, strlen(path));
         write(1, "\n", 1);
-        init_module(path);
+        cleanup_module(path);
     } else {
-        init_module(param);
+        cleanup_module(param);
     }
     return 0;
 }
