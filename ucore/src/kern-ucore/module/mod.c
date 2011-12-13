@@ -26,7 +26,7 @@ void register_mod_add(func_add_t f) {
 }
 
 void unregister_mod_add() {
-    kprintf("unregistering mod add\n");
+    mod_disable_symbol(MOD_ADD);
 }
 
 void register_mod_mul(func_mul_t f) {
@@ -34,7 +34,7 @@ void register_mod_mul(func_mul_t f) {
 }
 
 void unregister_mod_mul() {
-    kprintf("unregistering mod mul\n");
+    mod_disable_symbol(MOD_MUL);
 }
 
 int load_mod_file(char *name, uintptr_t *addr, uint32_t *size) {
@@ -161,7 +161,7 @@ int do_cleanup_module(const char *name) {
 int do_mod_add(int a, int b) {
     int c = 0;
     int idx = find_export_sym(MOD_ADD, 0);
-    if (idx < 0) {
+    if (idx < 0 || !get_sym_ptr(idx)) {
         kprintf("[ EE ] module add not loaded into kernel\n");
         return 0;
     }

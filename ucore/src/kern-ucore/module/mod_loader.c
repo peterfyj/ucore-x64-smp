@@ -132,6 +132,13 @@ void mod_touch_symbol(const char *name, void * ptr, uint32_t flags) {
     ex_sym_flags[idx] = flags;
 }
 
+void mod_disable_symbol(const char *name) {
+    int idx = find_export_sym(name, 0);
+    if (idx >= 0) {
+        ex_sym_ptr[idx] = 0;
+    }
+}
+
 static int elf_mod_create_symbol(const char *name, void *ptr, uint32_t flags) {
     int idx = find_export_sym(name, 1);
     if (idx != ex_sym_count - 1) {
