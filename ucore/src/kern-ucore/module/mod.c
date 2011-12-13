@@ -169,3 +169,14 @@ int do_mod_add(int a, int b) {
     return c;
 }
 
+int do_mod_mul(int a, int b) {
+    int c = 0;
+    int idx = find_export_sym(MOD_MUL, 0);
+    if (idx < 0 || !get_sym_ptr(idx)) {
+        kprintf("[ EE ] module mul not loaded into kernel\n");
+        return 0;
+    }
+    ((func_mul_t)get_sym_ptr(idx))(a, b, &c);
+    return c;
+}
+

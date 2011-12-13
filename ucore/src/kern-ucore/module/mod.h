@@ -6,8 +6,8 @@
 #define MOD_INIT_MODULE "init_module"
 #define MOD_CLEANUP_MODULE "cleanup_module"
 
-#define MOD_ADD "mod_add"
-#define MOD_MUL "mod_mul"
+#define MOD_ADD "module_func_add"
+#define MOD_MUL "module_func_mul"
 
 typedef int (*func_add_t)(int a, int b, int *c);
 typedef int (*func_mul_t)(int a, int b, int *c);
@@ -39,6 +39,7 @@ int do_init_module(const char *name);
 int do_cleanup_module(const char *name);
 
 int do_mod_add(int a, int b);
+int do_mod_mul(int a, int b);
 
 #endif
 

@@ -59,6 +59,7 @@ int sys_init_module(const char *name);
 int sys_cleanup_module(const char *name);
 int sys_list_module();
 int sys_mod_add(int, int);
+int sys_mod_mul(int, int);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

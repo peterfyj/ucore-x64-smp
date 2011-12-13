@@ -356,6 +356,13 @@ sys_mod_add(uint64_t arg[]) {
     return do_mod_add(a, b);
 }
 
+static uint64_t
+sys_mod_mul(uint64_t arg[]) {
+    int a = (int)arg[0];
+    int b = (int)arg[1];
+    return do_mod_mul(a, b);
+}
+
 static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -407,6 +414,7 @@ static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_cleanup_module]    sys_cleanup_module,
     [SYS_list_module]       sys_list_module,
     [SYS_mod_add]           sys_mod_add,
+    [SYS_mod_mul]           sys_mod_mul,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))
