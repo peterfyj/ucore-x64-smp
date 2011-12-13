@@ -12,6 +12,7 @@ static char path[MX_MOD_PATH_LEN];
 #define KERN_MODULE_ADDITIONAL_LEN 16
 
 #define USAGE "insmod <mod-name>\n"
+#define LOADING "loading "
 
 int
 main(int argc, char **argv) {
@@ -23,7 +24,9 @@ main(int argc, char **argv) {
     char * param = argv[1];
     if (size < 3 || strcmp(KERN_MODULE_SUFFIX, &param[size - 3]) != 0) {        // shortcut mode
         snprintf(path, size + KERN_MODULE_ADDITIONAL_LEN + 1, KERN_MODULE_PREFIX"%s"KERN_MODULE_SUFFIX, param);
+        write(1, LOADING, strlen(LOADING));
         write(1, path, strlen(path));
+        write(1, "\n", 1);
         init_module(path);
     } else {
         init_module(param);

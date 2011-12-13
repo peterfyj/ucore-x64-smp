@@ -10,6 +10,7 @@
 #include <vmm.h>
 #include <mod_loader.h>
 #include <mod.h>
+#include <mod_manager.h>
 #include <error.h>
 
 #define current (pls_read(current))
@@ -102,6 +103,12 @@ void mod_init() {
 static char tmp_path[MX_MOD_PATH_LEN];
 
 uint64_t do_init_module(const char *name) {
+
+    if (module_loaded(name)) {
+        kprintf("[ WW ] module %s already loaded\n", name);
+        return -2;
+    }
+    add_module(name);
     int ret;
 
     struct mm_struct *mm = current->mm;
