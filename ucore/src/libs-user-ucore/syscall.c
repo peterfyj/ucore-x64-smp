@@ -228,3 +228,10 @@ sys_mkfifo(const char *name, uint32_t open_flags) {
     return syscall(SYS_mkfifo, name, open_flags);
 }
 
+int sys_init_module(const char *name) {
+    return syscall(SYS_init_module, name);
+}
+
+int sys_mod_add(int a, int b) {
+    return syscall(SYS_mod_add, a, b);
+}

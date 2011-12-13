@@ -55,6 +55,7 @@ int sys_getdirentry(int fd, struct dirent *dirent);
 int sys_dup(int fd1, int fd2);
 int sys_pipe(int *fd_store);
 int sys_mkfifo(const char *name, uint32_t open_flags);
+int sys_mod_add(int, int);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

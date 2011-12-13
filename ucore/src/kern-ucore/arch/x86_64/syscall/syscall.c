@@ -14,6 +14,7 @@
 #include <sysfile.h>
 #include <kio.h>
 #include <glue_kio.h>
+#include <mod.h>
 
 #define current (pls_read(current))
 
@@ -330,6 +331,19 @@ sys_mkfifo(uint64_t arg[]) {
     return sysfile_mkfifo(name, open_flags);
 }
 
+static uint64_t
+sys_init_module(uint64_t arg[]) {
+    const char *name = (const char *)arg[0];
+    return do_init_module(name);
+}
+
+static uint64_t
+sys_mod_add(uint64_t arg[]) {
+    int a = (int)arg[0];
+    int b = (int)arg[1];
+    return do_mod_add(a, b);
+}
+
 static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -377,6 +391,8 @@ static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_dup]               sys_dup,
     [SYS_pipe]              sys_pipe,
     [SYS_mkfifo]            sys_mkfifo,
+    [SYS_init_module]       sys_init_module,
+    [SYS_mod_add]           sys_mod_add,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

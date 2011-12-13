@@ -5,7 +5,7 @@ E_DECODE ?= $(shell echo $(1) | sed -e 's!_1!_!g' -e 's!_2!/!g')
 
 # The order makes sense
 ifeq (${BRANCH},ucore)
-MODS := supervisor kern-ucore ht-sign ht-mksfs libs-user-ucore user-ucore bootloader
+MODS := supervisor kern-ucore ht-sign ht-mksfs libs-user-ucore user-ucore bootloader kern-module
 KERN := ucore
 endif
 
@@ -36,6 +36,8 @@ mod-kern-river: mod-supervisor
 mod-user-ucore: mod-ht-mksfs mod-libs-user-ucore
 
 mod-bootloader: mod-ht-sign mod-kern-${KERN} mod-supervisor 
+
+mod-kern-module: mod-user-ucore
 
 mod-%:
 	@echo MAKE $* {
