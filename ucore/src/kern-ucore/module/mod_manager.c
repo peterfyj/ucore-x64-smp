@@ -1,12 +1,15 @@
 #include <string.h>
 #include <stdio.h>
 #include <slab.h>
+#include <mod.h>
+#include <kio.h>
 
 #define uint32_t unsigned int
 #define MX 97
 #define output(x...) kprintf(x)
 
 char * table[MX];
+struct elf_mod_info_s * modules[MX];
 
 static uint32_t hash(const char * str) {
     uint32_t hash = 0;
@@ -75,12 +78,28 @@ static int hash_remove(const char *name) {
     return index;
 }
 
-int add_module(const char *name) {
-    return hash_insert(name);
+int add_module(const char *name, struct elf_mod_info_s * info) {
+    int ret = hash_insert(name);
+    if (ret >= 0) {
+        modules[ret] = info;
+    }
+    return ret;
 }
 
 int del_module(const char *name) {
-    return hash_remove(name);
+    int ret = hash_remove(name);
+    if (ret >= 0) {
+        modules[ret] = NULL;
+    }
+    return ret;
+}
+
+struct elf_mod_info_s * get_module(const char *name) {
+    int ret = hash_find(name);
+    if (ret >= 0) {
+        return modules[ret];
+    }
+    return NULL;
 }
 
 /**
@@ -88,7 +107,7 @@ int del_module(const char *name) {
  *  return 1 means loaded, 0 means not loaded
  */
 int module_loaded(const char *name) {
-    return hash_find(name) != -1;
+    return hash_find(name) >= 0;
 }
 
 void print_loaded_module() {

@@ -35,7 +35,8 @@ void unregister_mod_add();
 void register_mod_add(func_mul_t f);
 void unregister_mod_add();
 
-uint64_t do_init_module(const char *name);
+int do_init_module(const char *name);
+int do_cleanup_module(const char *name);
 
 int do_mod_add(int a, int b);
 

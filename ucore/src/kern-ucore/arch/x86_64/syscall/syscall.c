@@ -338,6 +338,12 @@ sys_init_module(uint64_t arg[]) {
 }
 
 static uint64_t
+sys_cleanup_module(uint64_t arg[]) {
+    const char *name = (const char *)arg[0];
+    return do_cleanup_module(name);
+}
+
+static uint64_t
 sys_mod_add(uint64_t arg[]) {
     int a = (int)arg[0];
     int b = (int)arg[1];
@@ -392,6 +398,7 @@ static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_pipe]              sys_pipe,
     [SYS_mkfifo]            sys_mkfifo,
     [SYS_init_module]       sys_init_module,
+    [SYS_cleanup_module]    sys_cleanup_module,
     [SYS_mod_add]           sys_mod_add,
 };
 

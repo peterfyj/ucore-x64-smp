@@ -26,7 +26,7 @@ void register_mod_add(func_add_t f) {
 }
 
 void unregister_mod_add() {
-
+    kprintf("unregistering mod add\n");
 }
 
 void register_mod_mul(func_mul_t f) {
@@ -34,7 +34,7 @@ void register_mod_mul(func_mul_t f) {
 }
 
 void unregister_mod_mul() {
-
+    kprintf("unregistering mod mul\n");
 }
 
 int load_mod_file(char *name, uintptr_t *addr, uint32_t *size) {
@@ -66,6 +66,9 @@ int load_mod_file(char *name, uintptr_t *addr, uint32_t *size) {
 }
 
 int load_module(char * name) {
+    struct elf_mod_info_s info;
+    add_module(name, &info);    // must add module before load_mod_file, cuz load_mod_file will modify name
+
     int ret = 0;
     uintptr_t mod_addr;
     uint32_t mod_size;
@@ -73,11 +76,21 @@ int load_module(char * name) {
         return ret;
     }
 
-    struct elf_mod_info_s info;
     elf_mod_load(mod_addr, mod_size, &info);
 
     ((voidfunc)info.load_ptr)();
     return ret;
+}
+
+int unload_module(const char *name) {
+    struct elf_mod_info_s *info = get_module(name);
+    if (info == NULL) {
+        kprintf("[ EE ] module info not found for %s\n", name);
+        return -1;
+    }
+    ((voidfunc)info->unload_ptr)();
+
+    return del_module(name);
 }
 
 void mod_init() {
@@ -102,13 +115,12 @@ void mod_init() {
 #define MX_MOD_PATH_LEN 1024
 static char tmp_path[MX_MOD_PATH_LEN];
 
-uint64_t do_init_module(const char *name) {
+int do_init_module(const char *name) {
 
     if (module_loaded(name)) {
         kprintf("[ WW ] module %s already loaded\n", name);
-        return -2;
+        return -1;
     }
-    add_module(name);
     int ret;
 
     struct mm_struct *mm = current->mm;
@@ -122,6 +134,27 @@ uint64_t do_init_module(const char *name) {
     tmp_path[size] = '\0';
     
     ret = load_module(tmp_path);
+    return ret;
+}
+
+int do_cleanup_module(const char *name) {
+    if (!module_loaded(name)) {
+        kprintf("[ EE ] module %s not loaded\n", name);
+        return -1;
+    }
+    int ret;
+
+    struct mm_struct *mm = current->mm;
+    lock_mm(mm);
+    int size = strlen(name);
+    if (!copy_from_user(mm, tmp_path, name, size, 1)) {
+        unlock_mm(mm);
+        return -E_INVAL;
+    }
+    unlock_mm(mm);
+    tmp_path[size] = '\0';
+
+    ret = unload_module(name);
     return ret;
 }
 
