@@ -40,25 +40,25 @@ void unregister_mod_mul() {
 int load_mod_file(char *name, uintptr_t *addr, uint32_t *size) {
     int fd = file_open(name, O_RDONLY);
     if (fd < 0) {
-        kprintf("[ EE ] cannot find kernel object file: %s\n", name);
+        error("cannot find kernel object file: %s\n", name);
         return -1;
     }
     struct stat mod_stat;
     memset(&mod_stat, 0, sizeof(mod_stat));
     file_fstat(fd, &mod_stat);
     if (mod_stat.st_size <= 0 || mod_stat.st_size > (1<<20)) {
-        kprintf("[ EE ] wrong obj file size: %d\n", mod_stat.st_size);
+        error("wrong obj file size: %d\n", mod_stat.st_size);
         return -1;
     }
-    kprintf("[ II ] loading kern module: %s, size = %d\n", name, mod_stat.st_size);
+    info("loading kern module: %s, size = %d\n", name, mod_stat.st_size);
     void * buffer = (void *)ko_pool_pointer;
     if (buffer == NULL) {
-        kprintf("[ EE ] not enough memory to load the module\n");
+        error("not enough memory to load the module\n");
         return -1;
     }
     size_t copied;
     file_read(fd, buffer, mod_stat.st_size, &copied);
-    kprintf("[ II ] module size: %d, mem addr: %x\n", copied, buffer);
+    info("[ II ] module size: %d, mem addr: %x\n", copied, buffer);
     ko_pool_pointer += copied;
     *addr = (uintptr_t)buffer;
     *size = mod_stat.st_size;
@@ -85,7 +85,7 @@ int load_module(char * name) {
 int unload_module(const char *name) {
     struct elf_mod_info_s *info = get_module(name);
     if (info == NULL) {
-        kprintf("[ EE ] module info not found for %s\n", name);
+        error("module info not found for %s\n", name);
         return -1;
     }
     ((voidfunc)info->unload_ptr)();
@@ -99,7 +99,7 @@ void mod_init() {
 
     mod_loader_init();
 
-    kprintf("[ II ] exporting kernel symbols\n");
+    info("[ II ] exporting kernel symbols\n");
 
     EXPORT(kprintf);
     EXPORT(register_mod_add);

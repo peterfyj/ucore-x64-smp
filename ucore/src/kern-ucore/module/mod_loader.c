@@ -8,8 +8,7 @@
 #include <elf.h>
 #include <bitsearch.h>
 #include <mmu.h>
-
-#define error(x ...) kprintf("[ EE ] %s:%d, ", __FILE__, __LINE__);kprintf(x)
+#include <mod_loader.h>
 
 #define CHARS_MAX            10240
 static uint32_t char_count;
@@ -197,25 +196,25 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
 
     eh = (struct elfhdr *)elf;
 
-    kprintf("[ II ] shnum = %d, shsize = %d\n", eh->e_shnum, eh->e_shentsize);
+    info("shnum = %d, shsize = %d\n", eh->e_shnum, eh->e_shentsize);
 
     for (i = 0; i < eh->e_shnum; i++) {
         sh = (struct secthdr*)(elf + eh->e_shoff + (i * eh->e_shentsize));
-        kprintf("[ II ] sh type = %d\n", sh->sh_type);
+        info("sh type = %d\n", sh->sh_type);
         if (sh->sh_type == SH_TYPE_SYMTAB) {
             for (x = 0; x < sh->sh_size; x += sh->sh_entsize) {
                 symtab = (struct symtab_s *)(elf + sh->sh_offset + x);
-                kprintf("[ II ] found sym: [%s] info[%02x] size[%d] addr[%08x]\n",
+                info("found sym: [%s] info[%02x] size[%d] addr[%08x]\n",
                         get_symbol_string(elf, symtab->sym_name),
                         symtab->sym_info,
                         symtab->sym_size,
                         symtab->sym_address);
                 if (symtab->sym_shndx != SHN_UNDEF && symtab->sym_shndx < 0xff00) {
-                    kprintf("[ II ]     value offset [%08x]\n", get_section_offset(elf, symtab->sym_shndx) + symtab->sym_address);
+                    info("    value offset [%08x]\n", get_section_offset(elf, symtab->sym_shndx) + symtab->sym_address);
                     const char * sym_name = get_symbol_string(elf, symtab->sym_name);
                     switch (GET_SYMTAB_BIND(symtab->sym_info)) {
                         case STB_GLOBAL:
-                            kprintf("[ II ]     global symbol\n");
+                            info("    global symbol\n");
                         case STB_LOCAL:
                             if (strcmp(sym_name, MOD_INIT_MODULE) == 0) {
                                 *mod_load_ptr = get_section_offset(elf, symtab->sym_shndx) + symtab->sym_address + elf;
@@ -230,7 +229,7 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
                             break;
 
                         case STB_WEAK:
-                            kprintf("[ II ]     weak symbol\n");
+                            info("    weak symbol\n");
                             if (export_symbol) {
                                 elf_mod_create_symbol(sym_name, (void *)(symtab->sym_address + elf), 0);
                             }
@@ -238,13 +237,13 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
                     }
                 } else if (symtab->sym_shndx == SHN_COMMON) {
                     // TODO: implement SHN_COMMON
-                    kprintf("[ EE ] not implemented\n");
+                    error("not implemented\n");
                 } else {
-                    kprintf("[ II ] shndx[%04x]\n", symtab->sym_shndx);
+                    info("shndx[%04x]\n", symtab->sym_shndx);
                 }
             }
         } else if (sh->sh_type == SH_TYPE_NOBITS) {
-            kprintf("[ II ] bss section, alloc %d byte align 0x%x\n", sh->sh_size, sh->sh_addralign);
+            info("bss section, alloc %d byte align 0x%x\n", sh->sh_size, sh->sh_addralign);
             if (bsf(sh->sh_addralign != bsr(sh->sh_addralign))) {
                 error(" bad align\n");
                 return -1;
@@ -283,7 +282,7 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
                 reloc = (struct reloc_a_s *)(elf + sh->sh_offset + x);
                 symtab = fill_symbol_struct(elf, GET_RELOC_SYM(reloc->rl_info));
 
-                kprintf("[ II ] reloc[%02x] offset[%08x] for [%s], sym offset[%08x]\n",
+                info("reloc[%02x] offset[%08x] for [%s], sym offset[%08x]\n",
                         GET_RELOC_TYPE(reloc->rl_info),
                         reloc->rl_offset,
                         get_symbol_string(elf, symtab->sym_name),
@@ -303,11 +302,11 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
                             reloc_addr = 0;
                         }
                     } else {
-                        kprintf("external symbol %s addr = %p\n", sym_name, ex_sym_ptr[idx]);
+                        info("external symbol %s addr = %p\n", sym_name, ex_sym_ptr[idx]);
                         reloc_addr = ex_sym_ptr[idx];
                     }
                 } else if (symtab->sym_shndx < 0xff00) {
-                    kprintf("section offset %16x, addr %16x\n", get_section_offset(elf, symtab->sym_shndx), symtab->sym_address);
+                    info("section offset %16x, addr %16x\n", get_section_offset(elf, symtab->sym_shndx), symtab->sym_address);
                     if (((struct secthdr *)(elf + eh->e_shoff + (symtab->sym_shndx * eh->e_shentsize)))->sh_type == SH_TYPE_NOBITS) {
                         reloc_addr = common_space;
                     } else {
@@ -326,12 +325,12 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
                         reloc_addr = reloc_addr - (uintptr_t)mem_addr;
                         //*(uintptr_t *)mem_addr = reloc_addr + *(uintptr_t *)mem_addr;
                         *(uint32_t *)mem_addr = reloc_addr + reloc->rl_addend;
-                        kprintf("fill rel address %08x to %08x\n", *(uint32_t *)mem_addr, mem_addr);
+                        info("fill rel address %08x to %08x\n", *(uint32_t *)mem_addr, mem_addr);
                         break;
 
                     case 0x0b:      // S + A
                         *(uint32_t *)mem_addr = reloc_addr + reloc->rl_addend;
-                        kprintf("fill rel address %08x to %08x\n", *(uint32_t *)mem_addr, mem_addr);
+                        info("fill rel address %08x to %08x\n", *(uint32_t *)mem_addr, mem_addr);
                         break;
 
                     default:
@@ -341,7 +340,7 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
                 }
             }
         } else if (sh->sh_type == SH_TYPE_REL) {
-            kprintf("[ EE ] relocation SH_TYPE_REL not implemented\n");
+            error("relocation SH_TYPE_REL not implemented\n");
         }
     }
 
@@ -349,7 +348,7 @@ static int elf_mod_parse(uintptr_t elf, const char *name, int export_symbol,
 }
 
 static int elf_head_check(void * elf) {
-    kprintf("[ II ] begin elf header check\n");
+    info("begin elf header check\n");
     struct elfhdr * eh = (struct elfhdr *)elf;
     if (eh->e_magic != ELF_MAGIC) {
         error("invalid signature: %x\n", eh->e_magic);
@@ -376,7 +375,7 @@ static int elf_head_check(void * elf) {
         return -1;
     }
     
-    kprintf("[ OK ] elf head check passed !\n");
+    info("elf head check passed !\n");
     return 0;
 }
 

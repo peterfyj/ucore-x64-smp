@@ -8,4 +8,13 @@ void mod_disable_symbol(const char *name);
 void touch_export_sym(const char *name, uintptr_t ptr, uint32_t flags);
 uintptr_t get_sym_ptr(int idx);
 
+#define error(x ...) kprintf("[ EE ] %s:%d, ", __FILE__, __LINE__);kprintf(x)
+
+//#define DEBUG_KERN_MODULE
+#ifdef DEBUG_KERN_MODULE
+    #define info(x ...) kprintf("[ II ] ");kprintf(x)
+#else
+    #define info(x ...)
+#endif
+
 #endif
