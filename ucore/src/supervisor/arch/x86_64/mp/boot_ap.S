@@ -46,7 +46,7 @@ seta20.2:
 	movl $idt, %eax
 	lidt (%eax)
 
-	movl $0xA0, %eax
+	movl $0x2A0, %eax
 	movl %eax, %cr4
 
 	movl BOOT_AP_CR3, %eax

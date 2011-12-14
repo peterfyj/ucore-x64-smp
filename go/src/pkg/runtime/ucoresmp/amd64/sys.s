@@ -76,18 +76,10 @@ TEXT runtime·mincore(SB),7,$0-24
 	RET
 
 TEXT runtime·gettime(SB), 7, $32
-	LEAQ	8(SP), DI
-	MOVQ	$0, SI
-	MOVQ	$0xffffffffff600000, AX
-	CALL	AX
-
-	MOVQ	8(SP), BX	// sec
-	MOVQ	sec+0(FP), DI
-	MOVQ	BX, (DI)
-
-	MOVL	16(SP), BX	// usec
-	MOVQ	usec+8(FP), DI
-	MOVL	BX, (DI)
+	MOVQ	8(SP), DI
+	MOVQ	16(SP), SI
+	MOVQ	$151, AX		// getpcstime
+	INT $0x80
 	RET
 
 TEXT runtime·rt_sigaction(SB),7,$0-32

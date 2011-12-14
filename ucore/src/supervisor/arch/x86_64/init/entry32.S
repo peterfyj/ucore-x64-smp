@@ -67,7 +67,7 @@ loop:
     jne loop
 
     # Prepare for long-mode, set (CR4_PGE | CR4_PAE)
-    movl $0x20, %eax
+    movl $0x220, %eax
     movl %eax, %cr4
 
     # set cr3

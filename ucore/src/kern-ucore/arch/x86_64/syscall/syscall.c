@@ -14,6 +14,7 @@
 #include <sysfile.h>
 #include <kio.h>
 #include <glue_kio.h>
+#include <vmm.h>
 
 #define current (pls_read(current))
 
@@ -338,6 +339,25 @@ sys_prctl(uint64_t arg[]) {
 	return do_prctl(code, ptr);
 }
 
+static uint64_t
+sys_getpcstime(uint64_t arg[]) {
+	uint64_t* sec = (uint64_t*) arg[0];
+	uint32_t* usec = (uint32_t*) arg[1];
+	if (sec && !user_mem_check(current->mm, sec, sizeof(uint64_t), 1)) {
+		return -E_INVAL;
+	}
+	if (usec && !user_mem_check(current->mm, usec, sizeof(uint32_t), 1)) {
+		return -E_INVAL;
+	}
+	if (sec) {
+		*sec = ticks / 100;
+	}
+	if (usec) {
+		*usec = (ticks % 100) * 10000;
+	}
+	return 0;
+}
+
 static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -386,6 +406,7 @@ static uint64_t (*syscalls[])(uint64_t arg[]) = {
     [SYS_pipe]              sys_pipe,
     [SYS_mkfifo]            sys_mkfifo,
 	[SYS_prctl]				sys_prctl,
+	[SYS_getpcstime]		sys_getpcstime,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))
@@ -395,11 +416,11 @@ syscall(void) {
     struct trapframe *tf = current->tf;
     uint64_t arg[6];
     int num = tf->tf_regs.reg_rax;
-	/*
+	
 	if (num != SYS_read && num != SYS_write) {
 		kprintf("syscall [%d] detected!\n", num);
 	}
-	*/
+	
     if (num >= 0 && num < NUM_SYSCALLS) {
         if (syscalls[num] != NULL) {
             arg[0] = tf->tf_regs.reg_rdi;

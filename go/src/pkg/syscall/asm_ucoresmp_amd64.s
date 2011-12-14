@@ -16,11 +16,11 @@ TEXT	·Syscall(SB),7,$0
 	MOVQ	16(SP), DI
 	MOVQ	24(SP), SI
 	MOVQ	32(SP), DX
-	MOVQ	$0, R10
+	MOVQ	$0, CX
 	MOVQ	$0, R8
 	MOVQ	$0, R9
 	MOVQ	8(SP), AX	// syscall entry
-	SYSCALL
+	INT $0x80
 	CMPQ	AX, $0xfffffffffffff001
 	JLS	ok
 	MOVQ	$-1, 40(SP)	// r1
@@ -41,11 +41,11 @@ TEXT ·Syscall6(SB),7,$0
 	MOVQ	16(SP), DI
 	MOVQ	24(SP), SI
 	MOVQ	32(SP), DX
-	MOVQ	40(SP), R10
+	MOVQ	40(SP), CX
 	MOVQ	48(SP), R8
 	MOVQ	56(SP), R9
 	MOVQ	8(SP), AX	// syscall entry
-	SYSCALL
+	INT $0x80
 	CMPQ	AX, $0xfffffffffffff001
 	JLS	ok6
 	MOVQ	$-1, 64(SP)	// r1
@@ -65,11 +65,11 @@ TEXT ·RawSyscall(SB),7,$0
 	MOVQ	16(SP), DI
 	MOVQ	24(SP), SI
 	MOVQ	32(SP), DX
-	MOVQ	$0, R10
+	MOVQ	$0, CX
 	MOVQ	$0, R8
 	MOVQ	$0, R9
 	MOVQ	8(SP), AX	// syscall entry
-	SYSCALL
+	INT $0x80
 	CMPQ	AX, $0xfffffffffffff001
 	JLS	ok1
 	MOVQ	$-1, 40(SP)	// r1
@@ -87,11 +87,11 @@ TEXT ·RawSyscall6(SB),7,$0
 	MOVQ	16(SP), DI
 	MOVQ	24(SP), SI
 	MOVQ	32(SP), DX
-	MOVQ	40(SP), R10
+	MOVQ	40(SP), CX
 	MOVQ	48(SP), R8
 	MOVQ	56(SP), R9
 	MOVQ	8(SP), AX	// syscall entry
-	SYSCALL
+	INT $0x80
 	CMPQ	AX, $0xfffffffffffff001
 	JLS	ok2
 	MOVQ	$-1, 64(SP)	// r1
@@ -103,21 +103,6 @@ ok2:
 	MOVQ	AX, 64(SP)	// r1
 	MOVQ	DX, 72(SP)	// r2
 	MOVQ	$0, 80(SP)	// errno
-	RET
-
-TEXT ·Gettimeofday(SB),7,$0
-	MOVQ	8(SP), DI
-	MOVQ	$0, SI
-	MOVQ	$0xffffffffff600000, AX
-	CALL	AX
-
-	CMPQ	AX, $0xfffffffffffff001
-	JLS	ok7
-	NEGQ	AX
-	MOVQ	AX, 16(SP)  // errno
-	RET
-ok7:
-	MOVQ	$0, 16(SP)  // errno
 	RET
 
 TEXT ·Time(SB),7,$0

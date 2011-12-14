@@ -14,6 +14,7 @@ export TARGET_LD_FLAGS			?=	-m $(shell ld -V | grep elf_i386 2>/dev/null) -nostd
 
 qemu: all
 	${QEMU} -smp 4 -m 512 \
+	-cpu qemu64,+sse2,+x2apic \
 	-hda ${T_OBJ}/kernel.img \
 	-drive file=${T_OBJ}/swap.img,media=disk,cache=writeback \
 	-drive file=${T_OBJ}/sfs.img,media=disk,cache=writeback \
