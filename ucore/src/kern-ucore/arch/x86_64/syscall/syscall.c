@@ -343,10 +343,10 @@ static uint64_t
 sys_getpcstime(uint64_t arg[]) {
 	uint64_t* sec = (uint64_t*) arg[0];
 	uint32_t* usec = (uint32_t*) arg[1];
-	if (sec && !user_mem_check(current->mm, sec, sizeof(uint64_t), 1)) {
+	if (sec && !user_mem_check(current->mm, (uintptr_t) sec, sizeof(uint64_t), 1)) {
 		return -E_INVAL;
 	}
-	if (usec && !user_mem_check(current->mm, usec, sizeof(uint32_t), 1)) {
+	if (usec && !user_mem_check(current->mm, (uintptr_t) usec, sizeof(uint32_t), 1)) {
 		return -E_INVAL;
 	}
 	if (sec) {
@@ -416,10 +416,6 @@ syscall(void) {
     struct trapframe *tf = current->tf;
     uint64_t arg[6];
     int num = tf->tf_regs.reg_rax;
-	
-	if (num != SYS_read && num != SYS_write) {
-		kprintf("syscall [%d] detected!\n", num);
-	}
 	
     if (num >= 0 && num < NUM_SYSCALLS) {
         if (syscalls[num] != NULL) {

@@ -10,7 +10,7 @@ var c chan int
 func ready(index int) {
 	time.Sleep(int64(index) * 1e9)
 	fmt.Println(index)
-	c <- 1
+	c<-1
 }
 
 func main() {
@@ -20,6 +20,6 @@ func main() {
 		go ready(i + 1)
 	}
 	for i := 0; i < total; i++ {
-		<- c
+		<-c
 	}
 }

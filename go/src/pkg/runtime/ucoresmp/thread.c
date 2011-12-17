@@ -176,27 +176,12 @@ runtime·notesleep(Note *n)
 }
 
 
-// Clone, the Linux rfork.
 enum
 {
-	CLONE_VM = 0x100,
-	CLONE_FS = 0x200,
-	CLONE_FILES = 0x400,
-	CLONE_SIGHAND = 0x800,
-	CLONE_PTRACE = 0x2000,
-	CLONE_VFORK = 0x4000,
-	CLONE_PARENT = 0x8000,
-	CLONE_THREAD = 0x10000,
-	CLONE_NEWNS = 0x20000,
-	CLONE_SYSVSEM = 0x40000,
-	CLONE_SETTLS = 0x80000,
-	CLONE_PARENT_SETTID = 0x100000,
-	CLONE_CHILD_CLEARTID = 0x200000,
-	CLONE_UNTRACED = 0x800000,
-	CLONE_CHILD_SETTID = 0x1000000,
-	CLONE_STOPPED = 0x2000000,
-	CLONE_NEWUTS = 0x4000000,
-	CLONE_NEWIPC = 0x8000000,
+	CLONE_VM        =   0x00000100,  // set if VM shared between processes
+	CLONE_THREAD    =   0x00000200,  // thread group
+	CLONE_SEM       =   0x00000400,  // set if shared between processes
+	CLONE_FS        =   0x00000800,  // set if shared between processes
 };
 
 void
@@ -208,12 +193,7 @@ runtime·newosproc(M *m, G *g, void *stk, void (*fn)(void))
 	/*
 	 * note: strace gets confused if we use CLONE_PTRACE here.
 	 */
-	flags = CLONE_VM	/* share memory */
-		| CLONE_FS	/* share cwd, etc */
-		| CLONE_FILES	/* share fd table */
-		| CLONE_SIGHAND	/* share sig handler table */
-		| CLONE_THREAD	/* revisit - okay for now */
-		;
+	flags = CLONE_VM | CLONE_FS | CLONE_SEM | CLONE_THREAD;
 
 	m->tls[0] = m->id;	// so 386 asm can find it
 	if(0){

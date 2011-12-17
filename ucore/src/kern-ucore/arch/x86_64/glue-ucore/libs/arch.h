@@ -3,6 +3,9 @@
 
 #include <types.h>
 
+#define MSR_FS_BASE 0xc0000100
+#define MSR_GS_BASE 0xc0000101
+
 #define barrier() __asm__ __volatile__ ("" ::: "memory")
 
 static inline uint8_t inb(uint16_t port) __attribute__((always_inline));

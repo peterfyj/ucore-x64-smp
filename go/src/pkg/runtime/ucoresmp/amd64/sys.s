@@ -145,29 +145,29 @@ TEXT runtime·notok(SB),7,$0
 // uint32 runtime·sem_init(uint32 value)
 TEXT runtime·sem_init(SB),7,$0
 	MOVL	$40, AX		// sys_sem_init;
-	MOVL	4(SP), DX
+	MOVL	8(SP), DI
 	INT	$0x80
 	RET
 
 // uint32 runtime·sem_post(uint32 sema)
 TEXT runtime·sem_post(SB),7,$0
 	MOVL	$41, AX		// sys_sem_post;
-	MOVL	4(SP), DX
+	MOVL	8(SP), DI
 	INT $0X80
 	RET
 
 // uint32 runtime·sem_wait(uint32 sema, uint timeout)
 TEXT runtime·sem_wait(SB),7,$0
 	MOVL	$42, AX		// sys_sem_wait;
-	MOVL	4(SP), DX
-	MOVL	8(SP), CX
+	MOVL	8(SP), DI
+	MOVL	12(SP), SI
 	INT $0X80
 	RET
 
 // uint32 runtime·sem_free(uint32 sema)
 TEXT runtime·sem_free(SB),7,$0
 	MOVL	$43, AX		// sys_sem_free;
-	MOVL	4(SP), DX
+	MOVL	8(SP), DI
 	INT $0X80
 	RET
 
@@ -182,7 +182,7 @@ TEXT runtime·clone(SB),7,$0
 	MOVQ	gg+32(SP), R9
 	MOVQ	fn+40(SP), R12
 
-	MOVL	$56, AX
+	MOVL	$5, AX
 	INT $0x80
 
 	// In parent, return.
@@ -193,8 +193,7 @@ TEXT runtime·clone(SB),7,$0
 	// In child, on new stack.
 	MOVQ	SI, SP
 	
-	// Initialize m->procid to Linux tid
-	MOVL	$186, AX	// gettid
+	MOVL	$18, AX	// getpid
 	INT $0x80
 	MOVQ	AX, m_procid(R8)
 
@@ -213,7 +212,7 @@ TEXT runtime·clone(SB),7,$0
 
 	// It shouldn't return.  If it does, exit
 	MOVL	$111, DI
-	MOVL	$60, AX
+	MOVL	$1, AX
 	INT $0x80
 	JMP	-3(PC)	// keep exiting
 

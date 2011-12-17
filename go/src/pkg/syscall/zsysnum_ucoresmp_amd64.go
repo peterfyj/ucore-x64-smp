@@ -6,6 +6,7 @@ package syscall
 const (
 	UCORE_EXIT				   = 1
 	UCORE_EXIT_THREAD		   = 9
+	UCORE_SLEEP				   = 11
 	UCORE_WRITE				   = 103
 	UCORE_GETPCSTIME		   = 151
 	SYS_READ                   = 0

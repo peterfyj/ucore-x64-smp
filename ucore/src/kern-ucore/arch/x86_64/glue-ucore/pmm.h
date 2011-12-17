@@ -11,6 +11,7 @@
 #include <proc.h>
 
 extern struct segdesc pls_gdt[];
+extern struct pseudodesc pls_gdt_pd;
 
 /* Simply translate between VA and PA without checking */
 #define KADDR(addr) ((void*)((uintptr_t)(addr) + PBASE))

@@ -13,6 +13,7 @@ export CGO_ENABLED=0
 
 alias _runtime='cd "$CURRENT/src/pkg/runtime/ucoresmp"'
 alias _syscall='cd "$CURRENT/src/pkg/syscall"'
+alias _time='cd "$CURRENT/src/pkg/time"'
 alias _root='cd "$CURRENT"'
 
 build_go()

@@ -50,10 +50,8 @@ __trapret:
     popq %rax
     movq %rax, %es
 	popq %rax
-	movq %rax, %fs
 	popq %rax
-	movq %rax, %gs
-
+	
     popq %r15
     popq %r14
     popq %r13

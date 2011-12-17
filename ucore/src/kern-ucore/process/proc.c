@@ -179,10 +179,39 @@ get_pid(void) {
 void
 set_tls(struct proc_struct *proc) {
 	struct segdesc* p = pls_get_ptr(gdt);
+	struct pseudodesc* pd = pls_get_ptr(gdt_pd);
 	p[SEG_TLS1] = proc->fs;
 	p[SEG_TLS2] = proc->gs;
-	asm volatile ("movw %%ax, %%fs;" :: "a" (USER_TLS1));
-	asm volatile ("movw %%ax, %%gs;" :: "a" (USER_TLS2));
+	asm volatile (
+		"mov %0, %%fs;"
+		"mov %1, %%gs;"
+		:: "r" (USER_TLS1), "r" (USER_TLS2)
+	);
+	
+	uint32_t fs_base_low32 = 0, gs_base_low32 = 0;
+	fs_base_low32 += p[SEG_TLS1].sd_base_15_0;
+	fs_base_low32 += p[SEG_TLS1].sd_base_23_16 << 16;
+	fs_base_low32 += p[SEG_TLS1].sd_base_31_24 << 24;
+	gs_base_low32 += p[SEG_TLS2].sd_base_15_0;
+	gs_base_low32 += p[SEG_TLS2].sd_base_23_16 << 16;
+	gs_base_low32 += p[SEG_TLS2].sd_base_31_24 << 24;
+	
+	asm volatile (
+		"wrmsr;"
+		:: 
+		"a" (fs_base_low32), 
+		"d" (p[SEG_TLS1].sd_base_63_32), 
+		"c" (MSR_FS_BASE)
+	);
+	
+	asm volatile (
+		"wrmsr;"
+		:: 
+		"a" (gs_base_low32), 
+		"d" (p[SEG_TLS2].sd_base_63_32), 
+		"c" (MSR_GS_BASE)
+	);
+	asm volatile ("lgdt (%0)" :: "r" (pd));
 }
 
 // proc_run - make process "proc" running on cpu
@@ -453,7 +482,7 @@ may_killed(void) {
 //    4. call wakup_proc to make the new child process RUNNABLE 
 int
 do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
-    int ret = -E_NO_FREE_PROC;
+	int ret = -E_NO_FREE_PROC;
     struct proc_struct *proc;
     if (nr_process >= MAX_PROCESS) {
         goto fork_out;
@@ -819,6 +848,7 @@ failed_cleanup:
  */
 int
 do_prctl(int code, uintptr_t addr) {
+	// Set fs & gs contents in current;
 	struct segdesc* pseg;
 	switch (code) {
 		case SET_FS:
@@ -834,18 +864,12 @@ do_prctl(int code, uintptr_t addr) {
 	pseg->sd_base_23_16 = (addr >> 16) & 0xff;
 	pseg->sd_base_31_24 = (addr >> 24) & 0xff;
 	pseg->sd_base_63_32 = (addr >> 32) & 0xffffffff;
-	struct segdesc* pseg_cur = pls_get_ptr(gdt);
-	switch (code) {
-		case SET_FS:
-			pseg_cur[SEG_TLS1] = *pseg;
-			break;
-		case SET_GS:
-			pseg_cur[SEG_TLS2] = *pseg;
-			break;
-	}
+	
+	// In case current not scheduled, change cpu's gdt now;
 	set_tls(current);
 	current->tf->tf_fs = USER_TLS1;
 	current->tf->tf_gs = USER_TLS2;
+	
 	return 0;
 }
 

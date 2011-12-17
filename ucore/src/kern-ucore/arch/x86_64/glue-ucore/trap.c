@@ -84,10 +84,12 @@ print_trapframe(struct trapframe *tf) {
     kprintf("  cs   0x------------%04x\n", tf->tf_cs);
     kprintf("  ds   0x------------%04x\n", tf->tf_ds);
     kprintf("  es   0x------------%04x\n", tf->tf_es);
+	kprintf("  fs   0x------------%04x\n", tf->tf_fs);
+	kprintf("  gs   0x------------%04x\n", tf->tf_gs);
     kprintf("  flag 0x%016llx\n", tf->tf_rflags);
     kprintf("  rsp  0x%016llx\n", tf->tf_rsp);
     kprintf("  ss   0x------------%04x\n", tf->tf_ss);
-
+	
     int i, j;
     for (i = 0, j = 1; i < sizeof(IA32flags) / sizeof(IA32flags[0]); i ++, j <<= 1) {
         if ((tf->tf_rflags & j) && IA32flags[i] != NULL) {
@@ -144,7 +146,7 @@ pgfault_handler(struct trapframe *tf) {
     else {
         if (current == NULL) {
             print_trapframe(tf);
-            print_pgfault(tf);
+			print_pgfault(tf);
             panic("unhandled page fault.\n");
         }
         mm = current->mm;
@@ -160,7 +162,7 @@ trap_dispatch(struct trapframe *tf) {
     switch (tf->tf_trapno) {
     case T_PGFLT:
         if ((ret = pgfault_handler(tf)) != 0) {
-            print_trapframe(tf);
+			print_trapframe(tf);
             if (current == NULL) {
                 panic("handle pgfault failed. %e\n", ret);
             }
