@@ -11,11 +11,6 @@ export GOROOT=$CURRENT
 export PATH=$PATH:$GOROOT/bin
 export CGO_ENABLED=0
 
-alias _runtime='cd "$CURRENT/src/pkg/runtime/ucoresmp"'
-alias _syscall='cd "$CURRENT/src/pkg/syscall"'
-alias _time='cd "$CURRENT/src/pkg/time"'
-alias _root='cd "$CURRENT"'
-
 build_go()
 {
 	cd $GOROOT/src
@@ -37,10 +32,10 @@ clean_go()
 compile_go()
 {
 	cd "$GOROOT/testsuit"
-	6g "$1.go" && 6l "$1.6"
-	mv 6.out "$GOROOT/../ucore/src/user-ucore/_initial/"
+	6g "$1.go" && 6l -o "$1.out" "$1.6"
+	mv "$1.out" "$GOROOT/../ucore/src/user-ucore/_initial/"
 	rm "$1.6"
-	rm "$GOROOT/../ucore/obj/sfs.img"
+	rm "$GOROOT/../ucore/obj/sfs.img" 2> /dev/null
 }
 
 rebuild_pkg()
@@ -70,6 +65,12 @@ case $1 in
 	rebuild)
 		rebuild_pkg $2
 		exit
+		;;
+	help)
+		echo "Usage:"
+		echo "    clean: make clean;"
+		echo "    compile %s: compile %s.go and put it in ucore's _initial;"
+		echo "    make, build: make the go compiler;"
 		;;
 	'')
 		;;	
