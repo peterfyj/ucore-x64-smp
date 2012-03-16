@@ -36,3 +36,8 @@ process
 * What may be arch-dep in process management.
 * Interfaces that should be provided in all implementations.
 * User mode specific hooks.
+
+programming guide
+=================
+
+* Notes on the rules to be followed when writing common code.
