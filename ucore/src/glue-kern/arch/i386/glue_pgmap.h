@@ -62,6 +62,7 @@ ptep_set_s_read (pte_t *ptep)
 static inline void
 ptep_set_s_write (pte_t *ptep) 
 {
+	*ptep |= PTE_W;
 }
 
 static inline void
@@ -90,6 +91,7 @@ ptep_unset_s_write (pte_t *ptep)
 static inline void
 ptep_unset_u_read (pte_t *ptep) 
 {
+	*ptep &= (~PTE_U);
 }
 
 static inline void
